@@ -32,10 +32,27 @@ solana address
 4siwryZZU7EaTJWBcsbzaff6pdEE9c3RLrntHNBHnVYT
 
 
+mint nft tx: https://explorer.solana.com/tx/4sCTXxQC8HCoJ9jd9hx82MsrvTtK3k8Bxw2PpineYNB9Tk5GVWWCkiU74U7F15ChwZ3yTFeaNWHZBHDSHb8n5SAr?cluster=devnet
+minted nft: https://explorer.solana.com/address/ANNv7CaqNd56a6FqbHFa4mhtoDEaxgNQPMGXZxdyKxyn?cluster=devnet
+
+
 ### Redeploy
 Delete the target folder
-Run anchor build, this will add a new keypair to target/deploy
-run anchor keys list, this will give you the new program id
-copy the id to the top of your lib.rs
+
+```
+anchor build && anchor keys list
+```
+
+This will give you the new program id. Copy the id to the top of your lib.rs and other files.
+
+```
 anchor build && anchor deploy
+anchor test --skip-local-validator
+
+anchor test --skip-build --skip-deploy
+```
+
+solana config set --url devnet
+
+solana-test-validator --clone metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s --url https://api.devnet.solana.com --reset
 

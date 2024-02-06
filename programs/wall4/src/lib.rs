@@ -1,274 +1,142 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    metadata::{create_metadata_accounts_v3, CreateMetadataAccountsV3, Metadata},
-    token::{burn, mint_to, Burn, Mint, MintTo, Token, TokenAccount},
+    metadata::{
+        create_master_edition_v3, create_metadata_accounts_v3, CreateMasterEditionV3,
+        CreateMetadataAccountsV3, Metadata,
+    },
+    token::{mint_to, Mint, MintTo, Token, TokenAccount},
 };
+use mpl_token_metadata::{
+    pda::{find_master_edition_account, find_metadata_account},
+    state::{DataV2, Collection},
+};
+use solana_program::pubkey::Pubkey;
+use std::str::FromStr;
 
-use mpl_token_metadata::types::DataV2;
+declare_id!("1y7HCHaiNdex2TLWaSsvjFMKHZFTvJer9LXsFVcbTXm");
 
-use solana_program::{pubkey, pubkey::Pubkey};
-
-declare_id!("EfSZX5Mu3zaWvyi3EzyBfEFybj7LUib8QTdruib4WdGc");
-
-const ADMIN_PUBKEY: Pubkey = pubkey!("4siwryZZU7EaTJWBcsbzaff6pdEE9c3RLrntHNBHnVYT");
-const MAX_HEALTH: u8 = 100;
-
-pub const PREFIX: &str = "metadata";
-
-fn find_metadata_account(mint: &Pubkey) -> (Pubkey, u8) {
-    Pubkey::find_program_address(
-        &[
-            PREFIX.as_bytes(),
-            mpl_token_metadata::ID.as_ref(),
-            mint.as_ref(),
-        ],
-        &mpl_token_metadata::ID,
-    )
-}
 
 #[program]
-pub mod anchor_token {
+pub mod wall4 {
     use super::*;
 
-    // Create new token mint with PDA as mint authority
-    pub fn create_mint(
-        ctx: Context<CreateMint>,
-        uri: String,
+    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn init_nft(
+        ctx: Context<InitNFT>,
         name: String,
         symbol: String,
+        uri: String,
     ) -> Result<()> {
-        // PDA seeds and bump to "sign" for CPI
-        let seeds = b"reward";
-        let bump = ctx.bumps.reward_token_mint;
-        let signer: &[&[&[u8]]] = &[&[seeds, &[bump]]];
+        // create mint account
+        let cpi_context = CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            MintTo {
+                mint: ctx.accounts.mint.to_account_info(),
+                to: ctx.accounts.associated_token_account.to_account_info(),
+                authority: ctx.accounts.signer.to_account_info(),
+            },
+        );
 
-        // On-chain token metadata for the mint
+        mint_to(cpi_context, 1)?;
+
+        // create metadata account
+        let cpi_context = CpiContext::new(
+            ctx.accounts.token_metadata_program.to_account_info(),
+            CreateMetadataAccountsV3 {
+                metadata: ctx.accounts.metadata_account.to_account_info(),
+                mint: ctx.accounts.mint.to_account_info(),
+                mint_authority: ctx.accounts.signer.to_account_info(),
+                update_authority: ctx.accounts.signer.to_account_info(),
+                payer: ctx.accounts.signer.to_account_info(),
+                system_program: ctx.accounts.system_program.to_account_info(),
+                rent: ctx.accounts.rent.to_account_info(),
+            },
+        );
+
+        let collectionParent = Collection {
+            verified: false,
+            key: Pubkey::from_str("75p5yu3uVKwLpxJPhA2EhZmHuLJ2DuWY3wK94R4jJHMa").unwrap()
+        };
+
         let data_v2 = DataV2 {
             name: name,
             symbol: symbol,
             uri: uri,
             seller_fee_basis_points: 0,
             creators: None,
-            collection: None,
+            collection: Some(collectionParent),
+            //collection: None,
             uses: None,
         };
 
-        // CPI Context
-        let cpi_ctx = CpiContext::new_with_signer(
+        create_metadata_accounts_v3(cpi_context, data_v2, false, true, None)?;
+
+        //create master edition account
+        let cpi_context = CpiContext::new(
             ctx.accounts.token_metadata_program.to_account_info(),
-            CreateMetadataAccountsV3 {
-                // the metadata account being created
+            CreateMasterEditionV3 {
+                edition: ctx.accounts.master_edition_account.to_account_info(),
+                mint: ctx.accounts.mint.to_account_info(),
+                update_authority: ctx.accounts.signer.to_account_info(),
+                mint_authority: ctx.accounts.signer.to_account_info(),
+                payer: ctx.accounts.signer.to_account_info(),
                 metadata: ctx.accounts.metadata_account.to_account_info(),
-                // the mint account of the metadata account
-                mint: ctx.accounts.reward_token_mint.to_account_info(),
-                // the mint authority of the mint account
-                mint_authority: ctx.accounts.reward_token_mint.to_account_info(),
-                // the update authority of the metadata account
-                update_authority: ctx.accounts.reward_token_mint.to_account_info(),
-                // the payer for creating the metadata account
-                payer: ctx.accounts.admin.to_account_info(),
-                // the system program account
+                token_program: ctx.accounts.token_program.to_account_info(),
                 system_program: ctx.accounts.system_program.to_account_info(),
-                // the rent sysvar account
                 rent: ctx.accounts.rent.to_account_info(),
             },
-            signer,
         );
 
-        create_metadata_accounts_v3(
-            cpi_ctx, // cpi context
-            data_v2, // token metadata
-            true,    // is_mutable
-            true,    // update_authority_is_signer
-            None,    // collection details
-        )?;
+        create_master_edition_v3(cpi_context, None)?;
 
         Ok(())
     }
 
-    // Create new player account
-    pub fn init_player(ctx: Context<InitPlayer>) -> Result<()> {
-        ctx.accounts.player_data.health = MAX_HEALTH;
-        Ok(())
-    }
-
-    // Mint tokens to player token account
-    pub fn kill_enemy(ctx: Context<KillEnemy>) -> Result<()> {
-        // Check if player has enough health
-        if ctx.accounts.player_data.health == 0 {
-            return err!(ErrorCode::NotEnoughHealth);
-        }
-        // Subtract 10 health from player
-        ctx.accounts.player_data.health = ctx.accounts.player_data.health.checked_sub(10).unwrap();
-
-        // PDA seeds and bump to "sign" for CPI
-        let seeds = b"reward";
-        let bump = ctx.bumps.reward_token_mint;
-        let signer: &[&[&[u8]]] = &[&[seeds, &[bump]]];
-
-        // CPI Context
-        let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            MintTo {
-                mint: ctx.accounts.reward_token_mint.to_account_info(),
-                to: ctx.accounts.player_token_account.to_account_info(),
-                authority: ctx.accounts.reward_token_mint.to_account_info(),
-            },
-            signer,
-        );
-
-        // Mint 1 token, accounting for decimals of mint
-        let amount = (1u64)
-            .checked_mul(10u64.pow(ctx.accounts.reward_token_mint.decimals as u32))
-            .unwrap();
-
-        mint_to(cpi_ctx, amount)?;
-        Ok(())
-    }
-
-    // Burn token to heal player
-    pub fn heal(ctx: Context<Heal>) -> Result<()> {
-        ctx.accounts.player_data.health = MAX_HEALTH;
-
-        // CPI Context
-        let cpi_ctx = CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
-            Burn {
-                mint: ctx.accounts.reward_token_mint.to_account_info(),
-                from: ctx.accounts.player_token_account.to_account_info(),
-                authority: ctx.accounts.player.to_account_info(),
-            },
-        );
-
-        // Burn 1 token, accounting for decimals of mint
-        let amount = (1u64)
-            .checked_mul(10u64.pow(ctx.accounts.reward_token_mint.decimals as u32))
-            .unwrap();
-
-        burn(cpi_ctx, amount)?;
-        Ok(())
-    }
 }
 
 #[derive(Accounts)]
-pub struct CreateMint<'info> {
-    #[account(
-    mut,
-    address = ADMIN_PUBKEY
-    )]
-    pub admin: Signer<'info>,
+pub struct Initialize {}
 
-    // The PDA is both the address of the mint account and the mint authority
+#[derive(Accounts)]
+pub struct InitNFT<'info> {
+    /// CHECK: ok, we are passing in this account ourselves
+    #[account(mut, signer)]
+    pub signer: AccountInfo<'info>,
     #[account(
     init,
-    seeds = [b"reward"],
-    bump,
-    payer = admin,
-    mint::decimals = 9,
-    mint::authority = reward_token_mint,
-
+    payer = signer,
+    mint::decimals = 0,
+    mint::authority = signer.key(),
+    mint::freeze_authority = signer.key(),
     )]
-    pub reward_token_mint: Account<'info, Mint>,
-
-    ///CHECK: Using "address" constraint to validate metadata account address
+    pub mint: Account<'info, Mint>,
+    #[account(
+    init_if_needed,
+    payer = signer,
+    associated_token::mint = mint,
+    associated_token::authority = signer
+    )]
+    pub associated_token_account: Account<'info, TokenAccount>,
+    /// CHECK - address
     #[account(
     mut,
-    address=find_metadata_account(&reward_token_mint.key()).0
+    address=find_metadata_account(&mint.key()).0,
     )]
-    pub metadata_account: UncheckedAccount<'info>,
+    pub metadata_account: AccountInfo<'info>,
+    /// CHECK: address
+    #[account(
+    mut,
+    address=find_master_edition_account(&mint.key()).0,
+    )]
+    pub master_edition_account: AccountInfo<'info>,
 
     pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
-}
-
-#[derive(Accounts)]
-pub struct InitPlayer<'info> {
-    #[account(
-    init,
-    payer = player,
-    space = 8 + 8,
-    seeds = [b"player", player.key().as_ref()],
-    bump,
-    )]
-    pub player_data: Account<'info, PlayerData>,
-    #[account(mut)]
-    pub player: Signer<'info>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct KillEnemy<'info> {
-    #[account(mut)]
-    pub player: Signer<'info>,
-
-    #[account(
-    mut,
-    seeds = [b"player", player.key().as_ref()],
-    bump,
-    )]
-    pub player_data: Account<'info, PlayerData>,
-
-    // Initialize player token account if it doesn't exist
-    #[account(
-    init_if_needed,
-    payer = player,
-    associated_token::mint = reward_token_mint,
-    associated_token::authority = player
-    )]
-    pub player_token_account: Account<'info, TokenAccount>,
-
-    #[account(
-    mut,
-    seeds = [b"reward"],
-    bump,
-    )]
-    pub reward_token_mint: Account<'info, Mint>,
-
-    pub token_program: Program<'info, Token>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct Heal<'info> {
-    #[account(mut)]
-    pub player: Signer<'info>,
-
-    #[account(
-    mut,
-    seeds = [b"player", player.key().as_ref()],
-    bump,
-    )]
-    pub player_data: Account<'info, PlayerData>,
-
-    #[account(
-    mut,
-    associated_token::mint = reward_token_mint,
-    associated_token::authority = player
-    )]
-    pub player_token_account: Account<'info, TokenAccount>,
-
-    #[account(
-    mut,
-    seeds = [b"reward"],
-    bump,
-    )]
-    pub reward_token_mint: Account<'info, Mint>,
-
-    pub token_program: Program<'info, Token>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
-}
-
-#[account]
-pub struct PlayerData {
-    pub health: u8,
-}
-
-#[error_code]
-pub enum ErrorCode {
-    #[msg("Not enough health")]
-    NotEnoughHealth,
 }
