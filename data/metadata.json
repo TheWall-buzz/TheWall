@@ -1,0 +1,14 @@
+{
+  "name": "Wall #1",
+  "symbol": "WALL",
+  "description": "The wall is a collection of Bricks",
+  "image": "https://viviparty.s3.amazonaws.com/wall_intro.jpg",
+  "attributes": [
+    [
+      {
+        "trait_type": "WallID",
+        "value": "#1"
+      }
+    ]
+  ]
+}

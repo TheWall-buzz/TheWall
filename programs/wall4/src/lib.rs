@@ -14,7 +14,7 @@ use mpl_token_metadata::{
 use solana_program::pubkey::Pubkey;
 use std::str::FromStr;
 
-declare_id!("1y7HCHaiNdex2TLWaSsvjFMKHZFTvJer9LXsFVcbTXm");
+declare_id!("2hN52SohCxikLXEfT2EiZkvRpAEhD7Kg4yVJDzjikh5L");
 
 
 #[program]
@@ -25,42 +25,12 @@ pub mod wall4 {
         Ok(())
     }
 
-    pub fn init_nft(
+    pub fn add_wall(
         ctx: Context<InitNFT>,
         name: String,
         symbol: String,
-        uri: String,
+        uri: String
     ) -> Result<()> {
-        // create mint account
-        let cpi_context = CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
-            MintTo {
-                mint: ctx.accounts.mint.to_account_info(),
-                to: ctx.accounts.associated_token_account.to_account_info(),
-                authority: ctx.accounts.signer.to_account_info(),
-            },
-        );
-
-        mint_to(cpi_context, 1)?;
-
-        // create metadata account
-        let cpi_context = CpiContext::new(
-            ctx.accounts.token_metadata_program.to_account_info(),
-            CreateMetadataAccountsV3 {
-                metadata: ctx.accounts.metadata_account.to_account_info(),
-                mint: ctx.accounts.mint.to_account_info(),
-                mint_authority: ctx.accounts.signer.to_account_info(),
-                update_authority: ctx.accounts.signer.to_account_info(),
-                payer: ctx.accounts.signer.to_account_info(),
-                system_program: ctx.accounts.system_program.to_account_info(),
-                rent: ctx.accounts.rent.to_account_info(),
-            },
-        );
-
-        let collectionParent = Collection {
-            verified: false,
-            key: Pubkey::from_str("75p5yu3uVKwLpxJPhA2EhZmHuLJ2DuWY3wK94R4jJHMa").unwrap()
-        };
 
         let data_v2 = DataV2 {
             name: name,
@@ -68,34 +38,96 @@ pub mod wall4 {
             uri: uri,
             seller_fee_basis_points: 0,
             creators: None,
-            collection: Some(collectionParent),
-            //collection: None,
+            collection: None,
             uses: None,
         };
 
-        create_metadata_accounts_v3(cpi_context, data_v2, false, true, None)?;
-
-        //create master edition account
-        let cpi_context = CpiContext::new(
-            ctx.accounts.token_metadata_program.to_account_info(),
-            CreateMasterEditionV3 {
-                edition: ctx.accounts.master_edition_account.to_account_info(),
-                mint: ctx.accounts.mint.to_account_info(),
-                update_authority: ctx.accounts.signer.to_account_info(),
-                mint_authority: ctx.accounts.signer.to_account_info(),
-                payer: ctx.accounts.signer.to_account_info(),
-                metadata: ctx.accounts.metadata_account.to_account_info(),
-                token_program: ctx.accounts.token_program.to_account_info(),
-                system_program: ctx.accounts.system_program.to_account_info(),
-                rent: ctx.accounts.rent.to_account_info(),
-            },
+        return init_nft(
+            ctx,
+            data_v2
         );
-
-        create_master_edition_v3(cpi_context, None)?;
-
-        Ok(())
     }
 
+    pub fn add_brick(
+        ctx: Context<InitNFT>,
+        name: String,
+        symbol: String,
+        uri: String,
+        wall_pub_key: String
+    ) -> Result<()> {
+
+        let data_v2 = DataV2 {
+            name: name,
+            symbol: symbol,
+            uri: uri,
+            seller_fee_basis_points: 0,
+            creators: None,
+            //collection: Some(belongs_to),
+            collection: Some(Collection {
+                verified: false,
+                key: Pubkey::from_str(wall_pub_key.as_str()).unwrap()
+            }),
+            uses: None,
+        };
+
+        return init_nft(
+            ctx,
+            data_v2
+        );
+    }
+}
+
+pub fn init_nft(
+    ctx: Context<InitNFT>,
+    meta_data: DataV2
+) -> Result<()> {
+    // create mint account
+    let cpi_context = CpiContext::new(
+        ctx.accounts.token_program.to_account_info(),
+        MintTo {
+            mint: ctx.accounts.mint.to_account_info(),
+            to: ctx.accounts.associated_token_account.to_account_info(),
+            authority: ctx.accounts.signer.to_account_info(),
+        },
+    );
+
+    mint_to(cpi_context, 1)?;
+
+    // create metadata account
+    let cpi_context = CpiContext::new(
+        ctx.accounts.token_metadata_program.to_account_info(),
+        CreateMetadataAccountsV3 {
+            metadata: ctx.accounts.metadata_account.to_account_info(),
+            mint: ctx.accounts.mint.to_account_info(),
+            mint_authority: ctx.accounts.signer.to_account_info(),
+            update_authority: ctx.accounts.signer.to_account_info(),
+            payer: ctx.accounts.signer.to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
+            rent: ctx.accounts.rent.to_account_info(),
+        },
+    );
+
+    create_metadata_accounts_v3(cpi_context, meta_data, false, true, None)?;
+
+    //create master edition account
+    let cpi_context = CpiContext::new(
+        ctx.accounts.token_metadata_program.to_account_info(),
+        CreateMasterEditionV3 {
+            edition: ctx.accounts.master_edition_account.to_account_info(),
+            mint: ctx.accounts.mint.to_account_info(),
+            update_authority: ctx.accounts.signer.to_account_info(),
+            mint_authority: ctx.accounts.signer.to_account_info(),
+            payer: ctx.accounts.signer.to_account_info(),
+            metadata: ctx.accounts.metadata_account.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
+            rent: ctx.accounts.rent.to_account_info(),
+        },
+    );
+
+    create_master_edition_v3(cpi_context, None)?;
+
+    Ok(())
 }
 
 #[derive(Accounts)]

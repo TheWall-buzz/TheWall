@@ -56,3 +56,14 @@ solana config set --url devnet
 
 solana-test-validator --clone metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s --url https://api.devnet.solana.com --reset
 
+TODO
+- Frontend
+  - See the list of walls
+  - See a Wall
+  - Add a Wall, ability to change text
+  - Add a Brick, ability to change text
+  - Upload images and create metadata.json
+- Smart Contract
+  - Receive SOL to TheWall account when adding a Wall 
+  - Receive SOL to the Wall owner when adding a Brick
+- Deploy to Vercel

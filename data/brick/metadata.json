@@ -1,0 +1,18 @@
+{
+  "name": "A Brick from the Wall #1",
+  "symbol": "BRICK",
+  "description": "The wall is a collection of Bricks",
+  "image": "https://viviparty.s3.amazonaws.com/the_brick.jpeg",
+  "attributes": [
+    [
+      {
+        "trait_type": "BrickID",
+        "value": "#1"
+      },
+      {
+        "trait_type": "BelongsToWall",
+        "value": "#1"
+      }
+    ]
+  ]
+}
