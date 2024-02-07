@@ -67,3 +67,9 @@ TODO
   - Receive SOL to TheWall account when adding a Wall 
   - Receive SOL to the Wall owner when adding a Brick
 - Deploy to Vercel
+
+mpl_token_metadata/digitalAsset.d.ts
+/**
+* Fetches all digital assets from a verified collection. This does not work on older nfts that do not have a tokenStandard set.
+  */
+  export declare function fetchAllDigitalAssetByVerifiedCollection(context: Pick<Context, 'rpc' | 'eddsa' | 'programs'>, collectionAddress: PublicKey, options?: RpcGetAccountsOptions): Promise<DigitalAsset[]>;

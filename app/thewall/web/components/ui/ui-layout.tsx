@@ -18,7 +18,8 @@ import toast, { Toaster } from 'react-hot-toast';
 const pages: { label: string; path: string }[] = [
   { label: 'Account', path: '/account' },
   { label: 'Clusters', path: '/clusters' },
-  { label: 'Counter', path: '/counter' },
+  // { label: 'Counter', path: '/counter' },
+  { label: 'Wall list', path: '/wall-list' },
 ];
 
 export function UiLayout({ children }: { children: ReactNode }) {
@@ -26,7 +27,7 @@ export function UiLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="navbar bg-base-300 text-neutral-content flex-col md:flex-row space-y-2 md:space-y-0">
+      <div className="navbar bg-base-300 flex-col md:flex-row space-y-2 md:space-y-0">
         <div className="flex-1">
           <Link className="btn btn-ghost normal-case text-xl" href="/">
             <img

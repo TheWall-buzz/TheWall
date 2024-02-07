@@ -10,6 +10,7 @@ use anchor_spl::{
 use mpl_token_metadata::{
     pda::{find_master_edition_account, find_metadata_account},
     state::{DataV2, Collection},
+    instruction::verify_collection
 };
 use solana_program::pubkey::Pubkey;
 use std::str::FromStr;
@@ -75,6 +76,8 @@ pub mod wall4 {
             data_v2
         );
     }
+
+    //pub fn verify_collection()
 }
 
 pub fn init_nft(

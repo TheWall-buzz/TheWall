@@ -7,6 +7,7 @@ import {
     findMasterEditionPda,
     findMetadataPda,
     mplTokenMetadata,
+    verifyCollection,
     MPL_TOKEN_METADATA_PROGRAM_ID,
 } from "@metaplex-foundation/mpl-token-metadata";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
@@ -143,6 +144,7 @@ describe("solana-nft-anchor", async () => {
         .use(walletAdapterIdentity(signer))
         .use(mplTokenMetadata());
 
+    //provider.connection.getPar
 
 //     it("prints", async() => {
 //
