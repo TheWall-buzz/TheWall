@@ -73,3 +73,13 @@ mpl_token_metadata/digitalAsset.d.ts
 * Fetches all digital assets from a verified collection. This does not work on older nfts that do not have a tokenStandard set.
   */
   export declare function fetchAllDigitalAssetByVerifiedCollection(context: Pick<Context, 'rpc' | 'eddsa' | 'programs'>, collectionAddress: PublicKey, options?: RpcGetAccountsOptions): Promise<DigitalAsset[]>;
+
+### Wall Use Cases
+1. User creates a Wall NxM bricks and pays N*M*fee SOL.
+   Actions:
+      - Mint the Wall as a Collection NFT
+      - Mint each Brick as an NFT which belongs to the Wall Collection NFT
+      - Perform "Set and verify a sized collection item" for each Brick, so that the collection is verified
+   Now the whole Wall and its Bricks belong to the User.
+2. User can modify any Brick which they own - put an image, link or whatever they want to it
+3. User can put the Wall or any Brick that they own for sale

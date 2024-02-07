@@ -14,14 +14,20 @@ use mpl_token_metadata::{
 use solana_program::pubkey::Pubkey;
 use std::str::FromStr;
 
-declare_id!("2hN52SohCxikLXEfT2EiZkvRpAEhD7Kg4yVJDzjikh5L");
+declare_id!("NvyZHCoYSvWdYCvwjjHBTUb9Y3Bgf6ZkQEeQiZwsjiL");
 
 
 #[program]
 pub mod wall4 {
     use super::*;
 
+    // pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+    //     Ok(())
+    // }
+
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        let greeting_account = &mut ctx.accounts.greeting_account;
+        greeting_account.counter = 0; // Initialize counter to 0.
         Ok(())
     }
 
@@ -127,11 +133,38 @@ pub fn init_nft(
 
     create_master_edition_v3(cpi_context, None)?;
 
+    // let registry = &mut ctx.accounts.registry;
+    //
+    // // Ensure the NFT is not already registered.
+    // if !registry.nfts.contains(&ctx.accounts.mint.key()) {
+    //     // Add the NFT to the registry.
+    //     registry.nfts.push(ctx.accounts.mint.key());
+    //     registry.count += 1;
+    // }
+
     Ok(())
 }
 
-#[derive(Accounts)]
-pub struct Initialize {}
+// #[derive(Accounts)]
+// pub struct Initialize<'info> {
+//     /// CHECK: ok, we are passing in this account ourselves
+//     #[account(mut, signer)]
+//     pub signer: AccountInfo<'info>,
+//
+//     #[account(
+//     init,
+//     seeds = [b"nft_registry"],
+//     bump,
+//     payer = signer,
+//     space = 8 + 32 * 100 + 8
+//     )]
+//     pub registry: Account<'info, NftRegistry>,
+//
+//     // #[account(mut)]
+//     // pub user: Signer<'info>,
+//
+//     pub system_program: Program<'info, System>,
+// }
 
 #[derive(Accounts)]
 pub struct InitNFT<'info> {
@@ -171,4 +204,26 @@ pub struct InitNFT<'info> {
     pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
+}
+
+#[account]
+pub struct NftRegistry {
+    // The list of NFT mint addresses.
+    pub nfts: Vec<Pubkey>,
+    // Number of NFTs registered.
+    pub count: u64,
+}
+
+#[account]
+pub struct GreetingAccount {
+    pub counter: u64,
+}
+
+#[derive(Accounts)]
+pub struct Initialize<'info> {
+    #[account(init, payer = user, space = 8 + 8, seeds = [b"greeting"], bump)]
+    pub greeting_account: Account<'info, GreetingAccount>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+    pub system_program: Program<'info, System>,
 }

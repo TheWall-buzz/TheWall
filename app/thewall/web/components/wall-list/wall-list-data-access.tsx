@@ -38,7 +38,7 @@ export function useWallProgram() {
 
   const accounts = useQuery({
     queryKey: ['counter', 'all', { cluster }],
-    queryFn: () => program.account.counter.all(),
+    queryFn: () => program.account.mint.all(),
   });
 
   const getProgramAccount = useQuery({

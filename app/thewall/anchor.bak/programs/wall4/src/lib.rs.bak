@@ -169,9 +169,26 @@ pub struct InitNFT<'info> {
     )]
     pub master_edition_account: AccountInfo<'info>,
 
+    #[account(
+    init_if_needed,
+    seeds = [b"nft_registry"],
+    bump,
+    payer = signer,
+    space = 8 + 32 * 100 + 8
+    )]
+    pub registry: Account<'info, NftRegistry>,
+
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
+}
+
+#[account]
+pub struct NftRegistry {
+    // The list of NFT mint addresses.
+    pub nfts: Vec<Pubkey>,
+    // Number of NFTs registered.
+    pub count: u64,
 }

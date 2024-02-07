@@ -8,6 +8,7 @@ import {
     findMetadataPda,
     mplTokenMetadata,
     verifyCollection,
+    fetchAllDigitalAssetWithTokenByMint,
     MPL_TOKEN_METADATA_PROGRAM_ID,
 } from "@metaplex-foundation/mpl-token-metadata";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
@@ -37,6 +38,7 @@ async function addWall(program, signer, provider, umi) {
     };
 
     const mint = anchor.web3.Keypair.generate();
+    const registry = anchor.web3.Keypair.generate();
 
     // Derive the associated token address account for the mint
     const associatedTokenAccount = await getAssociatedTokenAddress(
@@ -62,6 +64,7 @@ async function addWall(program, signer, provider, umi) {
             associatedTokenAccount,
             metadataAccount,
             masterEditionAccount,
+            registry: registry.publicKey,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
@@ -88,6 +91,7 @@ async function addBrick(program, signer, provider, umi, wallPubKey) {
     };
 
     const mint = anchor.web3.Keypair.generate();
+    const registry = anchor.web3.Keypair.generate();
 
     // Derive the associated token address account for the mint
     const associatedTokenAccount = await getAssociatedTokenAddress(
@@ -113,6 +117,7 @@ async function addBrick(program, signer, provider, umi, wallPubKey) {
             associatedTokenAccount,
             metadataAccount,
             masterEditionAccount,
+            registry: registry.publicKey,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
