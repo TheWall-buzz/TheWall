@@ -9,7 +9,7 @@ export type CounterProgram = Program<Counter>;
 
 // After updating your program ID (e.g. after running `anchor keys sync`) update the value below.
 export const COUNTER_PROGRAM_ID = new PublicKey(
-  'FiX4buk69pUUU8bfJPq74tAcdFK2rBg1CDe2TWtFjsFU'
+  'DRhYJPdvfE1m1r3nxUhVzWNWoi9VRTYZJZZvDRDfHTmh'
 );
 
 // This is a helper function to get the program ID for the Counter program depending on the cluster.
@@ -19,7 +19,7 @@ export function getCounterProgramId(cluster: Cluster) {
     case 'testnet':
     case 'mainnet-beta':
       // You only need to update this if you deploy your program on one of these clusters.
-      return new PublicKey('FiX4buk69pUUU8bfJPq74tAcdFK2rBg1CDe2TWtFjsFU');
+      return new PublicKey('DRhYJPdvfE1m1r3nxUhVzWNWoi9VRTYZJZZvDRDfHTmh');
     default:
       return COUNTER_PROGRAM_ID;
   }

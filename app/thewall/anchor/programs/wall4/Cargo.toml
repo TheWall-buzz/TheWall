@@ -1,0 +1,26 @@
+[package]
+name = "wall4"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+resolver = "2"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "wall4"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = { version = "0.28.0", features = ["init-if-needed"] }
+anchor-spl = { version = "0.28.0", features = ["metadata"] }
+#anchor-spl = "0.29.0"
+#mpl-token-metadata = "3.2.3"
+mpl-token-metadata = "1.13.1"
+#mpl-token-metadata = { version = "4.1.1", features = ["instruction", "state"]}
+solana-program = "=1.16.13"
