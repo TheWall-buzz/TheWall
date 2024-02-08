@@ -123,33 +123,33 @@ pub mod wall4 {
             uses: None,
         };
 
-        // // create mint account
-        // let cpi_context = CpiContext::new(
-        //     ctx.accounts.token_program.to_account_info(),
-        //     MintTo {
-        //         mint: ctx.accounts.mint.to_account_info(),
-        //         to: ctx.accounts.associated_token_account.to_account_info(),
-        //         authority: ctx.accounts.signer.to_account_info(),
-        //     },
-        // );
-        //
-        // mint_to(cpi_context, 1)?;
-        //
-        // // create metadata account
-        // let cpi_context = CpiContext::new(
-        //     ctx.accounts.token_metadata_program.to_account_info(),
-        //     CreateMetadataAccountsV3 {
-        //         metadata: ctx.accounts.metadata_account.to_account_info(),
-        //         mint: ctx.accounts.mint.to_account_info(),
-        //         mint_authority: ctx.accounts.signer.to_account_info(),
-        //         update_authority: ctx.accounts.signer.to_account_info(),
-        //         payer: ctx.accounts.signer.to_account_info(),
-        //         system_program: ctx.accounts.system_program.to_account_info(),
-        //         rent: ctx.accounts.rent.to_account_info(),
-        //     },
-        // );
-        //
-        // create_metadata_accounts_v3(cpi_context, meta_data, false, true, None)?;
+        // create mint account
+        let cpi_context = CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            MintTo {
+                mint: ctx.accounts.mint.to_account_info(),
+                to: ctx.accounts.associated_token_account.to_account_info(),
+                authority: ctx.accounts.signer.to_account_info(),
+            },
+        );
+
+        mint_to(cpi_context, 1)?;
+
+        // create metadata account
+        let cpi_context = CpiContext::new(
+            ctx.accounts.token_metadata_program.to_account_info(),
+            CreateMetadataAccountsV3 {
+                metadata: ctx.accounts.metadata_account.to_account_info(),
+                mint: ctx.accounts.mint.to_account_info(),
+                mint_authority: ctx.accounts.signer.to_account_info(),
+                update_authority: ctx.accounts.signer.to_account_info(),
+                payer: ctx.accounts.signer.to_account_info(),
+                system_program: ctx.accounts.system_program.to_account_info(),
+                rent: ctx.accounts.rent.to_account_info(),
+            },
+        );
+
+        create_metadata_accounts_v3(cpi_context, meta_data, false, true, None)?;
         //
         // //create master edition account
         // let cpi_context = CpiContext::new(
@@ -277,14 +277,14 @@ pub struct BrickStruct<'info> {
     bump,
     )]
     pub bricks_registry: Account<'info, BricksRegistry>,
-    //
-    // #[account(
-    // init_if_needed,
-    // payer = signer,
-    // associated_token::mint = mint,
-    // associated_token::authority = signer
-    // )]
-    // pub associated_token_account: Account<'info, TokenAccount>,
+
+    #[account(
+    init_if_needed,
+    payer = signer,
+    associated_token::mint = mint,
+    associated_token::authority = signer
+    )]
+    pub associated_token_account: Account<'info, TokenAccount>,
     /// CHECK - address
     #[account(
     mut,
