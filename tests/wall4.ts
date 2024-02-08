@@ -238,7 +238,10 @@ describe("TheWall", async () => {
                 rent: anchor.web3.SYSVAR_RENT_PUBKEY
             })
             .signers([mint])
-            .rpc();
+            .rpc({
+                skipPreflight: true,
+                preflightCommitment: "confirmed" // Or another commitment level as needed
+            });
 
         console.log(
             `Wall mint nft tx: https://explorer.solana.com/tx/${tx}?cluster=devnet`

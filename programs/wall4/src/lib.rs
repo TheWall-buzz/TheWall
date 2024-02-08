@@ -47,7 +47,52 @@ pub mod wall4 {
             uses: None,
         };
 
-        //init_nft(ctx, meta_data);
+        // // create mint account
+        // let cpi_context = CpiContext::new(
+        //     ctx.accounts.token_program.to_account_info(),
+        //     MintTo {
+        //         mint: ctx.accounts.mint.to_account_info(),
+        //         to: ctx.accounts.associated_token_account.to_account_info(),
+        //         authority: ctx.accounts.signer.to_account_info(),
+        //     },
+        // );
+        //
+        // mint_to(cpi_context, 1)?;
+        //
+        // // create metadata account
+        // let cpi_context = CpiContext::new(
+        //     ctx.accounts.token_metadata_program.to_account_info(),
+        //     CreateMetadataAccountsV3 {
+        //         metadata: ctx.accounts.metadata_account.to_account_info(),
+        //         mint: ctx.accounts.mint.to_account_info(),
+        //         mint_authority: ctx.accounts.signer.to_account_info(),
+        //         update_authority: ctx.accounts.signer.to_account_info(),
+        //         payer: ctx.accounts.signer.to_account_info(),
+        //         system_program: ctx.accounts.system_program.to_account_info(),
+        //         rent: ctx.accounts.rent.to_account_info(),
+        //     },
+        // );
+        //
+        // create_metadata_accounts_v3(cpi_context, meta_data, false, true, None)?;
+        //
+        // //create master edition account
+        // let cpi_context = CpiContext::new(
+        //     ctx.accounts.token_metadata_program.to_account_info(),
+        //     CreateMasterEditionV3 {
+        //         edition: ctx.accounts.master_edition_account.to_account_info(),
+        //         mint: ctx.accounts.mint.to_account_info(),
+        //         update_authority: ctx.accounts.signer.to_account_info(),
+        //         mint_authority: ctx.accounts.signer.to_account_info(),
+        //         payer: ctx.accounts.signer.to_account_info(),
+        //         metadata: ctx.accounts.metadata_account.to_account_info(),
+        //         token_program: ctx.accounts.token_program.to_account_info(),
+        //         system_program: ctx.accounts.system_program.to_account_info(),
+        //         rent: ctx.accounts.rent.to_account_info(),
+        //     },
+        // );
+        //
+        // create_master_edition_v3(cpi_context, None)?;
+
 
         Ok(())
     }
@@ -78,7 +123,52 @@ pub mod wall4 {
             uses: None,
         };
 
-        //init_nft(ctx, meta_data);
+        // // create mint account
+        // let cpi_context = CpiContext::new(
+        //     ctx.accounts.token_program.to_account_info(),
+        //     MintTo {
+        //         mint: ctx.accounts.mint.to_account_info(),
+        //         to: ctx.accounts.associated_token_account.to_account_info(),
+        //         authority: ctx.accounts.signer.to_account_info(),
+        //     },
+        // );
+        //
+        // mint_to(cpi_context, 1)?;
+        //
+        // // create metadata account
+        // let cpi_context = CpiContext::new(
+        //     ctx.accounts.token_metadata_program.to_account_info(),
+        //     CreateMetadataAccountsV3 {
+        //         metadata: ctx.accounts.metadata_account.to_account_info(),
+        //         mint: ctx.accounts.mint.to_account_info(),
+        //         mint_authority: ctx.accounts.signer.to_account_info(),
+        //         update_authority: ctx.accounts.signer.to_account_info(),
+        //         payer: ctx.accounts.signer.to_account_info(),
+        //         system_program: ctx.accounts.system_program.to_account_info(),
+        //         rent: ctx.accounts.rent.to_account_info(),
+        //     },
+        // );
+        //
+        // create_metadata_accounts_v3(cpi_context, meta_data, false, true, None)?;
+        //
+        // //create master edition account
+        // let cpi_context = CpiContext::new(
+        //     ctx.accounts.token_metadata_program.to_account_info(),
+        //     CreateMasterEditionV3 {
+        //         edition: ctx.accounts.master_edition_account.to_account_info(),
+        //         mint: ctx.accounts.mint.to_account_info(),
+        //         update_authority: ctx.accounts.signer.to_account_info(),
+        //         mint_authority: ctx.accounts.signer.to_account_info(),
+        //         payer: ctx.accounts.signer.to_account_info(),
+        //         metadata: ctx.accounts.metadata_account.to_account_info(),
+        //         token_program: ctx.accounts.token_program.to_account_info(),
+        //         system_program: ctx.accounts.system_program.to_account_info(),
+        //         rent: ctx.accounts.rent.to_account_info(),
+        //     },
+        // );
+        //
+        // create_master_edition_v3(cpi_context, None)?;
+
 
         Ok(())
     }
@@ -245,9 +335,31 @@ pub struct WallStruct<'info> {
     )]
     pub bricks_registry: Account<'info, BricksRegistry>,
 
+    // #[account(
+    // init_if_needed,
+    // payer = signer,
+    // associated_token::mint = mint,
+    // associated_token::authority = signer
+    // )]
+    // pub associated_token_account: Account<'info, TokenAccount>,
+    /// CHECK - address
+    #[account(
+    mut,
+    address=find_metadata_account(&mint.key()).0,
+    )]
+    pub metadata_account: AccountInfo<'info>,
+    /// CHECK: address
+    #[account(
+    mut,
+    address=find_master_edition_account(&mint.key()).0,
+    )]
+    pub master_edition_account: AccountInfo<'info>,
+
     pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
-    pub rent: Sysvar<'info, Rent>
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
@@ -276,8 +388,30 @@ pub struct BrickStruct<'info> {
     bump,
     )]
     pub bricks_registry: Account<'info, BricksRegistry>,
+    //
+    // #[account(
+    // init_if_needed,
+    // payer = signer,
+    // associated_token::mint = mint,
+    // associated_token::authority = signer
+    // )]
+    // pub associated_token_account: Account<'info, TokenAccount>,
+    /// CHECK - address
+    #[account(
+    mut,
+    address=find_metadata_account(&mint.key()).0,
+    )]
+    pub metadata_account: AccountInfo<'info>,
+    /// CHECK: address
+    #[account(
+    mut,
+    address=find_master_edition_account(&mint.key()).0,
+    )]
+    pub master_edition_account: AccountInfo<'info>,
 
     pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
