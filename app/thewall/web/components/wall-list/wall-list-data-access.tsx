@@ -51,7 +51,7 @@ export function useWallProgram() {
   const initialize = useMutation({
     mutationKey: ['wall', 'initialize', { cluster }],
     //mutationFn: (keypair: Keypair) => addWall(program, provider.wallet, provider, umi),
-    mutationFn: (keypair: Keypair) => sendBatch(program, provider.wallet, provider, umi, 3),
+    mutationFn: (bricksCount: Number) => sendBatch(program, provider.wallet, provider, umi, bricksCount),
     onSuccess: (signature) => {
       transactionToast(signature);
       return accounts.refetch();
@@ -84,50 +84,10 @@ export function useWallProgramAccount({ wallPublicKey }: { wallPublicKey: Public
     //queryFn: () => program.account.bricksRegistry.all(),
   });
 
-  const close = useMutation({
-    mutationKey: ['counter', 'close', { cluster, wallPublicKey }],
-    mutationFn: () =>
-      program.methods.closeCounter().accounts({ counter }).rpc(),
-    onSuccess: (tx) => {
-      transactionToast(tx);
-      return accounts.refetch();
-    },
-  });
-
-  const decrement = useMutation({
-    mutationKey: ['counter', 'decrement', { cluster, wallPublicKey }],
-    mutationFn: () => program.methods.decrement().accounts({ wallPublicKey }).rpc(),
-    onSuccess: (tx) => {
-      transactionToast(tx);
-      return account.refetch();
-    },
-  });
-
-  const increment = useMutation({
-    mutationKey: ['counter', 'increment', { cluster, wallPublicKey }],
-    mutationFn: () => program.methods.increment().accounts({ wallPublicKey }).rpc(),
-    onSuccess: (tx) => {
-      transactionToast(tx);
-      return account.refetch();
-    },
-  });
-
-  const set = useMutation({
-    mutationKey: ['counter', 'set', { cluster, wallPublicKey }],
-    mutationFn: (value: number) =>
-      program.methods.set(value).accounts({ wallPublicKey }).rpc(),
-    onSuccess: (tx) => {
-      transactionToast(tx);
-      return account.refetch();
-    },
-  });
 
   return {
     account,
-    close,
-    decrement,
-    increment,
-    set,
+    close
   };
 }
 

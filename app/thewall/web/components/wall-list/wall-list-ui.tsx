@@ -11,14 +11,27 @@ import {
 
 export function WallCreate() {
   const { initialize } = useWallProgram();
+  const defaultBricksCount = 4;
 
   return (
     <button
       className="btn btn-xs lg:btn-md btn-primary"
-      onClick={() => initialize.mutateAsync(Keypair.generate())}
+        onClick={() => {
+            const value = window.prompt(
+                'Set value to:',
+                defaultBricksCount.toString()
+            );
+            if (
+                !value || isNaN(parseInt(value))
+            ) {
+                return;
+            }
+            return initialize.mutateAsync(parseInt(value))
+        }}
+
       disabled={initialize.isPending}
     >
-      Create {initialize.isPending && '...'}
+      Create Wall {initialize.isPending && '...'}
     </button>
   );
 }
@@ -40,15 +53,6 @@ export function WallList() {
     );
   }
 
-  // const [wallsRegistryAccount, _bump] = PublicKey.findProgramAddressSync(
-  //     [Buffer.from("walls_registry")],
-  //     programId
-  // );
-  // console.log(wallsRegistryAccount);
-  // //const wallsRegistry = await program.account.wallsRegistry.fetch(wallsRegistryAccount);
-  //
-
-  //debugger
   return (
     <div className={'space-y-6'}>
       {accounts.isLoading ? (
@@ -81,109 +85,50 @@ function WallCard({ wallPublicKey }: { wallPublicKey: PublicKey }) {
   return account.isLoading ? (
     <span className="loading loading-spinner loading-lg"></span>
   ) : (
-    <div className="card card-bordered border-base-300 border-4 text-neutral-content">
-      <div className="card-body items-center text-center">
-        <div className="space-y-6">
-          <h2
-              className="card-title justify-center text-3xl cursor-pointer"
-              onClick={() => account.refetch()}
-          >
-          </h2>
-          <div className="card-actions justify-around">
+    <div className="card card-bordered border-base-300 border-4">
+        <div className="card-body items-center text-center">
+            <div className="space-y-6">
+                <h2
+                    className="card-title justify-center text-3xl cursor-pointer"
+                    onClick={() => account.refetch()}
+                >
+                    WALL
+                </h2>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              {account.data && account.data.bricks.map((brickPublicKey) => (
-                  <BrickCard
-                      key={brickPublicKey.toString()}
-                      brickPublicKey={brickPublicKey}
-                  />
-              ))}
+
             </div>
-
-            <button
-                className="btn btn-xs lg:btn-md btn-outline"
-                onClick={() => increment.mutateAsync()}
-                disabled={increment.isPending}
-            >
-              Increment
-            </button>
-            <button
-                className="btn btn-xs lg:btn-md btn-outline"
-                onClick={() => {
-                  const value = window.prompt(
-                      'Set value to:',
-                      count.toString() ?? '0'
-                  );
-                  if (
-                      !value ||
-                      parseInt(value) === count ||
-                      isNaN(parseInt(value))
-                  ) {
-                    return;
-                  }
-                  return set.mutateAsync(parseInt(value));
-                }}
-                disabled={set.isPending}
-            >
-              Set
-            </button>
-            <button
-                className="btn btn-xs lg:btn-md btn-outline"
-                onClick={() => decrement.mutateAsync()}
-                disabled={decrement.isPending}
-            >
-              Decrement
-            </button>
-          </div>
-          <div className="text-center space-y-4">
-            <p>
-              <ExplorerLink
-                  path={`account/${wallPublicKey}`}
-                  label={ellipsify(wallPublicKey.toString())}
-              />
-            </p>
-            <button
-              className="btn btn-xs btn-secondary btn-outline"
-              onClick={() => {
-                if (
-                  !window.confirm(
-                    'Are you sure you want to close this account?'
-                  )
-                ) {
-                  return;
-                }
-                return close.mutateAsync();
-              }}
-              disabled={close.isPending}
-            >
-              Close
-            </button>
-          </div>
+            <div className="text-center space-y-4 text-sm">
+                <p>
+                    <ExplorerLink
+                        path={`account/${wallPublicKey}`}
+                        label={ellipsify(wallPublicKey.toString())}
+                    />
+                </p>
+                <div className="card-actions">
+                    <div className="grid md:grid-cols-2 gap-4">
+                        {account.data && account.data.bricks.map((brickPublicKey) => (
+                            <BrickCard
+                                key={brickPublicKey.toString()}
+                                brickPublicKey={brickPublicKey}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
   );
 }
 
-
-function BrickCard({ brickPublicKey }: { brickPublicKey: PublicKey }) {
+function BrickCard({brickPublicKey}: { brickPublicKey: PublicKey }) {
     return (
-        <div className="card card-bordered border-base-300 border-4 text-neutral-content">
+        <div className="card card-bordered border-base-400 border-4 text-center"  style={{width: '300px'}}>
             <div>Brick</div>
-            {brickPublicKey.toString()}
+            <ExplorerLink
+                path={`account/${brickPublicKey}`}
+                label={ellipsify(brickPublicKey.toString())}
+            />
         </div>
     )
-    // const { account} =
-    //     useWallProgramAccount({
-    //       wallPublicKey,
-    //     });
-    //
-    // return account.isLoading ? (
-    //     <span className="loading loading-spinner loading-lg"></span>
-  // ) : (
-  //     <div className="card card-bordered border-base-300 border-4 text-neutral-content">
-  //       <div>Brick</div>
-  //       {brickPublicKey.toString()}
-  //     </div>
-  // );
+
 }
