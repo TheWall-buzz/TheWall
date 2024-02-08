@@ -14,7 +14,7 @@ use mpl_token_metadata::{
 use solana_program::pubkey::Pubkey;
 use std::str::FromStr;
 
-declare_id!("A1xNh9dQmKmuyJHvdwVnSpMJWia1f4hF1Wb2DEMG9D5U");
+declare_id!("HFqSpA8gL91Ah4TD25FoPH2QhMoctKzS8X9Btyk1tteN");
 
 
 #[program]
@@ -394,8 +394,8 @@ pub struct WallStruct<'info> {
     )]
     pub mint: Account<'info, Mint>,
 
-    #[account(mut, seeds = [b"walls_registry"], bump)]
-    //#[account(init_if_needed, payer = signer, space = 8 + 32 * 100 + 8, seeds = [b"walls_registry"], bump, mut)]
+    //#[account(mut, seeds = [b"walls_registry"], bump)]
+    #[account(init_if_needed, payer = signer, space = 8 + 32 * 100 + 8, seeds = [b"walls_registry"], bump)]
     pub walls_registry: Account<'info, WallsRegistry>,
 
     #[account(

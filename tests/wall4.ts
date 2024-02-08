@@ -21,7 +21,7 @@ import {
     ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
-const PROGRAM_ID = new PublicKey("A1xNh9dQmKmuyJHvdwVnSpMJWia1f4hF1Wb2DEMG9D5U");
+//const PROGRAM_ID = new PublicKey("A1xNh9dQmKmuyJHvdwVnSpMJWia1f4hF1Wb2DEMG9D5U");
 
 
 const METADATA_PROGRAM_ID = new PublicKey(
@@ -303,23 +303,18 @@ describe("solana-nft-anchor", async () => {
     }
 
     it("mints nft!", async () => {
-        await initialize(program, signer, provider, umi);
+        //await initialize(program, signer, provider, umi);
 
-        const wallMint = anchor.web3.Keypair.generate(); // Wall mint
-        await testWallCall(program, signer, provider, umi, wallMint);
-
-        const brickMint = anchor.web3.Keypair.generate(); // Wall mint
-        await testBrickCall(program, signer, provider, umi, brickMint, wallMint);
-        const brickMint2 = anchor.web3.Keypair.generate(); // Wall mint
-        await testBrickCall(program, signer, provider, umi, brickMint2, wallMint);
-
-        // await testBrickCall(program, signer, provider, umi, wallMint);
+        // const wallMint1 = anchor.web3.Keypair.generate(); // Wall mint
+        // await testWallCall(program, signer, provider, umi, wallMint1);
+        //
+        // const brickMint = anchor.web3.Keypair.generate(); // Wall mint
+        // await testBrickCall(program, signer, provider, umi, brickMint, wallMint1);
+        // const brickMint2 = anchor.web3.Keypair.generate(); // Wall mint
+        // await testBrickCall(program, signer, provider, umi, brickMint2, wallMint1);
         //
         // const wallMint2 = anchor.web3.Keypair.generate(); // Wall mint
         // await testWallCall(program, signer, provider, umi, wallMint2);
-
-
-        // await addWall(program, signer, provider, umi, wallMint);
 
         const programId = program.programId;
 
@@ -330,32 +325,21 @@ describe("solana-nft-anchor", async () => {
         const wallsRegistry = await program.account.wallsRegistry.fetch(wallsRegistryAccount);
 
 
-        for (const mintAddress of wallsRegistry.walls) {
-            console.log(`Wall: ${mintAddress.toBase58()}`);
+        for (const wallMint of wallsRegistry.walls) {
+            console.log(`Wall: ${wallMint.toBase58()}`);
 
-            const [brickRegistryAccount, _bump2] = await PublicKey.findProgramAddress(
-                [Buffer.from("bricks_registry"), mintAddress.toBuffer()],
+            const [brickRegPDA, _bump2] = await PublicKey.findProgramAddress(
+                [Buffer.from("bricks_registry"), wallMint.toBuffer()],
                 programId
             );
-            const brick_registry = await program.account.bricksRegistry.fetch(brickRegistryAccount);
-            for (const mintAddress2 of brick_registry.bricks) {
-                console.log(`Brick: ${mintAddress2.toBase58()}`);
+            console.log(brickRegPDA.toString());
+            const bricksAccount = await program.account.bricksRegistry.fetch(brickRegPDA);
+            for (const brickMint of bricksAccount.bricks) {
+                console.log(`Brick: ${brickMint.toBase58()}`);
             }
 
         }
         console.log("------");
-
-        // const [bricksRegistry, _bump2] = await PublicKey.findProgramAddress(
-        //     [Buffer.from("bricks_registry"), mintAddress.toBuffer()],
-        //     programId
-        // );
-        // const bricksRegistry = await program.account.wallsRegistry.fetch(wallsRegistryAccount);
-
-
-        //
-        // console.log(program.account);
-
-        //
 
     });
 

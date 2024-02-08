@@ -24,7 +24,7 @@ export function WallCreate() {
 }
 
 export function WallList() {
-  const { accounts, getProgramAccount } = useWallProgram();
+  const { accounts, getProgramAccount , programId} = useWallProgram();
 
   if (getProgramAccount.isLoading) {
     return <span className="loading loading-spinner loading-lg"></span>;
@@ -39,17 +39,26 @@ export function WallList() {
       </div>
     );
   }
-  console.log(accounts.data);
+
+  // const [wallsRegistryAccount, _bump] = PublicKey.findProgramAddressSync(
+  //     [Buffer.from("walls_registry")],
+  //     programId
+  // );
+  // console.log(wallsRegistryAccount);
+  // //const wallsRegistry = await program.account.wallsRegistry.fetch(wallsRegistryAccount);
+  //
+
+  //debugger
   return (
     <div className={'space-y-6'}>
       {accounts.isLoading ? (
         <span className="loading loading-spinner loading-lg"></span>
       ) : accounts.data?.length ? (
         <div className="grid md:grid-cols-2 gap-4">
-          {accounts.data?.map((account) => (
+          {accounts.data && accounts.data[0].account.walls.map((account) => (
             <WallCard
-              key={account.publicKey.toString()}
-              counter={account.publicKey}
+              key={account.toString()}
+              wallPublicKey={account}
             />
           ))}
         </div>
@@ -63,13 +72,11 @@ export function WallList() {
   );
 }
 
-function WallCard({ counter }: { counter: PublicKey }) {
+function WallCard({ wallPublicKey }: { wallPublicKey: PublicKey }) {
   const { account, increment, set, decrement, close } =
     useWallProgramAccount({
-      counter,
+      wallPublicKey,
     });
-
-  const count = useMemo(() => account.data?.count ?? 0, [account.data?.count]);
 
   return account.isLoading ? (
     <span className="loading loading-spinner loading-lg"></span>
@@ -78,43 +85,49 @@ function WallCard({ counter }: { counter: PublicKey }) {
       <div className="card-body items-center text-center">
         <div className="space-y-6">
           <h2
-            className="card-title justify-center text-3xl cursor-pointer"
-            onClick={() => account.refetch()}
+              className="card-title justify-center text-3xl cursor-pointer"
+              onClick={() => account.refetch()}
           >
-            {count}
           </h2>
           <div className="card-actions justify-around">
+
+            <div className="grid md:grid-cols-2 gap-4">
+              {account.data && account.data.bricks.map((brickPublicKey) => (
+                  <BrickCard brickPublicKey={brickPublicKey} />
+              ))}
+            </div>
+
             <button
-              className="btn btn-xs lg:btn-md btn-outline"
-              onClick={() => increment.mutateAsync()}
-              disabled={increment.isPending}
+                className="btn btn-xs lg:btn-md btn-outline"
+                onClick={() => increment.mutateAsync()}
+                disabled={increment.isPending}
             >
               Increment
             </button>
             <button
-              className="btn btn-xs lg:btn-md btn-outline"
-              onClick={() => {
-                const value = window.prompt(
-                  'Set value to:',
-                  count.toString() ?? '0'
-                );
-                if (
-                  !value ||
-                  parseInt(value) === count ||
-                  isNaN(parseInt(value))
-                ) {
-                  return;
-                }
-                return set.mutateAsync(parseInt(value));
-              }}
-              disabled={set.isPending}
+                className="btn btn-xs lg:btn-md btn-outline"
+                onClick={() => {
+                  const value = window.prompt(
+                      'Set value to:',
+                      count.toString() ?? '0'
+                  );
+                  if (
+                      !value ||
+                      parseInt(value) === count ||
+                      isNaN(parseInt(value))
+                  ) {
+                    return;
+                  }
+                  return set.mutateAsync(parseInt(value));
+                }}
+                disabled={set.isPending}
             >
               Set
             </button>
             <button
-              className="btn btn-xs lg:btn-md btn-outline"
-              onClick={() => decrement.mutateAsync()}
-              disabled={decrement.isPending}
+                className="btn btn-xs lg:btn-md btn-outline"
+                onClick={() => decrement.mutateAsync()}
+                disabled={decrement.isPending}
             >
               Decrement
             </button>
@@ -122,8 +135,8 @@ function WallCard({ counter }: { counter: PublicKey }) {
           <div className="text-center space-y-4">
             <p>
               <ExplorerLink
-                path={`account/${counter}`}
-                label={ellipsify(counter.toString())}
+                  path={`account/${wallPublicKey}`}
+                  label={ellipsify(wallPublicKey.toString())}
               />
             </p>
             <button
@@ -147,4 +160,27 @@ function WallCard({ counter }: { counter: PublicKey }) {
       </div>
     </div>
   );
+}
+
+
+function BrickCard({ brickPublicKey }: { brickPublicKey: PublicKey }) {
+    return (
+        <div className="card card-bordered border-base-300 border-4 text-neutral-content">
+            <div>Brick</div>
+            {brickPublicKey.toString()}
+        </div>
+    )
+    // const { account} =
+    //     useWallProgramAccount({
+    //       wallPublicKey,
+    //     });
+    //
+    // return account.isLoading ? (
+    //     <span className="loading loading-spinner loading-lg"></span>
+  // ) : (
+  //     <div className="card card-bordered border-base-300 border-4 text-neutral-content">
+  //       <div>Brick</div>
+  //       {brickPublicKey.toString()}
+  //     </div>
+  // );
 }

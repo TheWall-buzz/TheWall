@@ -33,13 +33,14 @@ export function useWallProgram() {
 
   const program = new Program(WallIDL, programId, provider);
 
-  const umi = createUmi("https://api.devnet.solana.com")
+  //const umi = createUmi("https://api.devnet.solana.com")
+  const umi = createUmi("https://127.0.0.1:8899")
       .use(walletAdapterIdentity(provider.wallet))
       .use(mplTokenMetadata());
 
   const accounts = useQuery({
     queryKey: ['counter', 'all', { cluster }],
-    queryFn: () => program.account.nftRegistry.all(),
+    queryFn: () => program.account.wallsRegistry.all()
   });
 
   const getProgramAccount = useQuery({
@@ -67,18 +68,24 @@ export function useWallProgram() {
   };
 }
 
-export function useWallProgramAccount({ counter }: { counter: PublicKey }) {
+export function useWallProgramAccount({ wallPublicKey }: { wallPublicKey: PublicKey }) {
   const { cluster } = useCluster();
   const transactionToast = useTransactionToast();
-  const { program, accounts } = useWallProgram();
+  const { program, accounts, programId } = useWallProgram();
+
+  const [bricksRegistryAccount, _bump] = PublicKey.findProgramAddressSync(
+      [Buffer.from("bricks_registry"), wallPublicKey.toBuffer()],
+      programId
+  );
 
   const account = useQuery({
-    queryKey: ['counter', 'fetch', { cluster, counter }],
-    queryFn: () => program.account.counter.fetch(counter),
+    queryKey: ['counter', 'fetch', { cluster, bricksRegistryAccount }],
+    queryFn: () => program.account.bricksRegistry.fetch(bricksRegistryAccount),
+    //queryFn: () => program.account.bricksRegistry.all(),
   });
 
   const close = useMutation({
-    mutationKey: ['counter', 'close', { cluster, counter }],
+    mutationKey: ['counter', 'close', { cluster, wallPublicKey }],
     mutationFn: () =>
       program.methods.closeCounter().accounts({ counter }).rpc(),
     onSuccess: (tx) => {
@@ -88,8 +95,8 @@ export function useWallProgramAccount({ counter }: { counter: PublicKey }) {
   });
 
   const decrement = useMutation({
-    mutationKey: ['counter', 'decrement', { cluster, counter }],
-    mutationFn: () => program.methods.decrement().accounts({ counter }).rpc(),
+    mutationKey: ['counter', 'decrement', { cluster, wallPublicKey }],
+    mutationFn: () => program.methods.decrement().accounts({ wallPublicKey }).rpc(),
     onSuccess: (tx) => {
       transactionToast(tx);
       return account.refetch();
@@ -97,8 +104,8 @@ export function useWallProgramAccount({ counter }: { counter: PublicKey }) {
   });
 
   const increment = useMutation({
-    mutationKey: ['counter', 'increment', { cluster, counter }],
-    mutationFn: () => program.methods.increment().accounts({ counter }).rpc(),
+    mutationKey: ['counter', 'increment', { cluster, wallPublicKey }],
+    mutationFn: () => program.methods.increment().accounts({ wallPublicKey }).rpc(),
     onSuccess: (tx) => {
       transactionToast(tx);
       return account.refetch();
@@ -106,9 +113,9 @@ export function useWallProgramAccount({ counter }: { counter: PublicKey }) {
   });
 
   const set = useMutation({
-    mutationKey: ['counter', 'set', { cluster, counter }],
+    mutationKey: ['counter', 'set', { cluster, wallPublicKey }],
     mutationFn: (value: number) =>
-      program.methods.set(value).accounts({ counter }).rpc(),
+      program.methods.set(value).accounts({ wallPublicKey }).rpc(),
     onSuccess: (tx) => {
       transactionToast(tx);
       return account.refetch();
@@ -264,4 +271,27 @@ async function fetchNftRegistry(program, nftRegistryPubkey: PublicKey) {
   nftRegistryAccount.nfts.forEach((mintAddress: PublicKey, index: number) => {
     console.log(`${index + 1}: ${mintAddress.toBase58()}`);
   });
+}
+
+export function useBrickProgramAccount({ brickPublicKey }: { brickPublicKey: PublicKey }) {
+  const { cluster } = useCluster();
+  const transactionToast = useTransactionToast();
+  const { program, accounts, programId } = useWallProgram();
+
+  // const [bricksRegistryAccount, _bump] = PublicKey.findProgramAddressSync(
+  //     [Buffer.from("bricks_registry"), brickPublicKey.toBuffer()],
+  //     programId
+  // );
+
+  const account = useQuery({
+    queryKey: ['counter', 'fetch', { cluster, bricksRegistryAccount }],
+    queryFn: () => program.account.bricksRegistry.fetch(bricksRegistryAccount),
+    //queryFn: () => program.account.bricksRegistry.all(),
+  });
+
+
+
+  return {
+    account
+  };
 }
