@@ -14,7 +14,7 @@ use mpl_token_metadata::{
 use solana_program::pubkey::Pubkey;
 use std::str::FromStr;
 
-declare_id!("Ae3cdutffNw6Yj5DxWYXffJW5PegtCxJUjTLfUp1Mm3J");
+declare_id!("9czf4MLRzukFQuEiZSuccKWH97f2VcVGRJCgKo47Gnhq");
 
 
 #[program]
@@ -53,12 +53,12 @@ pub mod wall4 {
             data_v2
         );
 
-        let nft_registry = &mut ctx.accounts.nft_registry;
-
-        if !nft_registry.nfts.contains(&ctx.accounts.mint.key()) {
-            nft_registry.nfts.push(ctx.accounts.mint.key());
-            nft_registry.count += 1;
-        }
+        // let nft_registry = &mut ctx.accounts.nft_registry;
+        //
+        // if !nft_registry.nfts.contains(&ctx.accounts.mint.key()) {
+        //     nft_registry.nfts.push(ctx.accounts.mint.key());
+        //     nft_registry.count += 1;
+        // }
         Ok(())
     }
 
@@ -199,6 +199,7 @@ pub struct InitNFT<'info> {
     pub master_edition_account: AccountInfo<'info>,
 
     #[account(mut, seeds = [b"nft_registry"], bump)]
+    //#[account(init_if_needed, payer = signer, space = 8 + 32 * 100 + 8, seeds = [b"nft_registry"], bump, mut)]
     pub nft_registry: Account<'info, NftRegistry>,
 
     pub token_program: Program<'info, Token>,

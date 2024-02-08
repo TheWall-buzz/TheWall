@@ -19,7 +19,7 @@ export const COUNTER_PROGRAM_ID = new PublicKey(
 );
 
 export const WALL_PROGRAM_ID = new PublicKey(
-    'Ae3cdutffNw6Yj5DxWYXffJW5PegtCxJUjTLfUp1Mm3J'
+    '9czf4MLRzukFQuEiZSuccKWH97f2VcVGRJCgKo47Gnhq'
 );
 
 // This is a helper function to get the program ID for the Counter program depending on the cluster.

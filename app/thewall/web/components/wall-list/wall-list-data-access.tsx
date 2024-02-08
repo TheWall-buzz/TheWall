@@ -49,7 +49,8 @@ export function useWallProgram() {
 
   const initialize = useMutation({
     mutationKey: ['wall', 'initialize', { cluster }],
-    mutationFn: (keypair: Keypair) => addWall(program, provider.wallet, provider, umi),
+    //mutationFn: (keypair: Keypair) => addWall(program, provider.wallet, provider, umi),
+    mutationFn: (keypair: Keypair) => sendBatch(program, provider.wallet, provider, umi, 3),
     onSuccess: (signature) => {
       transactionToast(signature);
       return accounts.refetch();
@@ -123,11 +124,72 @@ export function useWallProgramAccount({ counter }: { counter: PublicKey }) {
   };
 }
 
-async function addWall(program, signer, provider, umi) {
+async function getWallTx(program, signer, provider, umi, mint) {
   const metadata = {
     name: "Wall #1",
     symbol: "WALL",
     uri: "https://viviparty.s3.amazonaws.com/metadata.json",
+  };
+
+  // Derive the associated token address account for the mint
+  const associatedTokenAccount = await getAssociatedTokenAddress(
+      mint.publicKey,
+      signer.publicKey
+  );
+
+  // derive the metadata account
+  let metadataAccount = findMetadataPda(umi, {
+    mint: publicKey(mint.publicKey),
+  })[0];
+
+  //derive the master edition pda
+  let masterEditionAccount = findMasterEditionPda(umi, {
+    mint: publicKey(mint.publicKey),
+  })[0];
+
+  const programId = program.programId;
+
+  // Generate the PDA used in the smart contract.
+  const [nftRegistry, _bump] = await PublicKey.findProgramAddress(
+      [Buffer.from("nft_registry")],
+      programId
+  );
+
+  const tx = await program.methods
+      .addWall(metadata.name, metadata.symbol, metadata.uri)
+      .accounts({
+        signer: provider.publicKey,
+        mint: mint.publicKey,
+        associatedTokenAccount,
+        metadataAccount,
+        masterEditionAccount,
+        nftRegistry,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY
+      })
+      .signers([mint])
+      .transaction()
+
+  return [tx, mint];
+      //.rpc();
+
+  // console.log(
+  //     `Wall mint nft tx: https://explorer.solana.com/tx/${tx}?cluster=devnet`
+  // );
+  // console.log(
+  //     `Wall minted nft: https://explorer.solana.com/address/${mint.publicKey}?cluster=devnet`
+  // );
+  // return mint.publicKey.toString();
+}
+
+async function getBrickTx(program, signer, provider, umi, wallPubKey) {
+  const metadata = {
+    name: "Brick of the Wall #1",
+    symbol: "BRICK",
+    uri: "https://viviparty.s3.amazonaws.com/wall1brick1/metadata.json",
   };
 
   const mint = anchor.web3.Keypair.generate();
@@ -148,7 +210,16 @@ async function addWall(program, signer, provider, umi) {
     mint: publicKey(mint.publicKey),
   })[0];
 
+  const programId = program.programId;
+
+  // Generate the PDA used in the smart contract.
+  const [nftRegistryAccount, _bump] = await PublicKey.findProgramAddress(
+      [Buffer.from("nft_registry")],
+      programId
+  );
+
   const tx = await program.methods
+      //.addBrick(metadata.name, metadata.symbol, metadata.uri, wallPubKey)
       .addWall(metadata.name, metadata.symbol, metadata.uri)
       .accounts({
         signer: provider.publicKey,
@@ -156,6 +227,7 @@ async function addWall(program, signer, provider, umi) {
         associatedTokenAccount,
         metadataAccount,
         masterEditionAccount,
+        nftRegistry: nftRegistryAccount,
         tokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
@@ -163,15 +235,26 @@ async function addWall(program, signer, provider, umi) {
         rent: anchor.web3.SYSVAR_RENT_PUBKEY
       })
       .signers([mint])
-      .rpc();
+      .transaction();
+  return [tx, mint];
+}
 
-  console.log(
-      `Wall mint nft tx: https://explorer.solana.com/tx/${tx}?cluster=devnet`
-  );
-  console.log(
-      `Wall minted nft: https://explorer.solana.com/address/${mint.publicKey}?cluster=devnet`
-  );
-  return mint.publicKey.toString();
+async function sendBatch(program, signer, provider, umi, bricksAmount) {
+  const wallMint = anchor.web3.Keypair.generate(); // Wall mint
+  const txList = []
+  const [tx, mint] = await getWallTx(program, signer, provider, umi, wallMint);
+  txList.push({ tx: tx, signers: [mint] })
+  for (let i = 0; i < bricksAmount; i++) {
+    const [tx, mint] = await getBrickTx(program, signer, provider, umi, wallMint.publicKey.toString());
+    txList.push({ tx: tx, signers: [mint] })
+  }
+
+  try {
+    const txSigs = await provider.sendAll(txList);
+    console.log("Transactions sent with signatures:", txSigs.map(txSig => txSig.signature));
+  } catch (error) {
+    console.error("Error sending transactions:", error);
+  }
 }
 
 async function fetchNftRegistry(program, nftRegistryPubkey: PublicKey) {

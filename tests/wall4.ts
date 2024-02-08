@@ -21,21 +21,19 @@ import {
     ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
-const PROGRAM_ID = new PublicKey("Ae3cdutffNw6Yj5DxWYXffJW5PegtCxJUjTLfUp1Mm3J");
+const PROGRAM_ID = new PublicKey("9czf4MLRzukFQuEiZSuccKWH97f2VcVGRJCgKo47Gnhq");
 
 
 const METADATA_PROGRAM_ID = new PublicKey(
     "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
 );
 
-async function addWall(program, signer, provider, umi) {
+async function addWall(program, signer, provider, umi, mint) {
     const metadata = {
         name: "Wall #1",
         symbol: "WALL",
         uri: "https://viviparty.s3.amazonaws.com/metadata.json",
     };
-
-    const mint = anchor.web3.Keypair.generate();
 
     // Derive the associated token address account for the mint
     const associatedTokenAccount = await getAssociatedTokenAddress(
@@ -87,7 +85,7 @@ async function addWall(program, signer, provider, umi) {
     console.log(
         `Wall minted nft: https://explorer.solana.com/address/${mint.publicKey}?cluster=devnet`
     );
-    return mint.publicKey.toString();
+    //return mint.publicKey.toString();
 }
 
 async function addBrick(program, signer, provider, umi, wallPubKey) {
@@ -228,34 +226,35 @@ describe("solana-nft-anchor", async () => {
 
     }
 
-    // it("mints nft!", async () => {
-    //     // await initialize(program, signer, provider, umi);
-    //
-    //     const wallPubKey = await addWall(program, signer, provider, umi);
-    //     await addBrick(program, signer, provider, umi, wallPubKey);
-    //     await addBrick(program, signer, provider, umi, wallPubKey);
-    // });
+    it("mints nft!", async () => {
+        await initialize(program, signer, provider, umi);
 
-    it("gets nfts", async () => {
-        async function fetchNftRegistry() {
-            const programId = program.programId;
-
-            const [nftRegistryPubkey, _bump] = await PublicKey.findProgramAddress(
-                [Buffer.from("nft_registry")],
-                programId
-            );
-
-            const nftRegistryAccount = await program.account.nftRegistry.fetch(nftRegistryPubkey);
-            console.log("NFTs Registered:", nftRegistryAccount.count.toString());
-            console.log("NFT Mint Addresses:");
-            let result = [];
-            nftRegistryAccount.nfts.forEach((mintAddress: PublicKey, index: number) => {
-                console.log(`${index + 1}: ${mintAddress.toBase58()}`);
-            });
-        }
-
-        fetchNftRegistry().catch(console.error);
+        const wallMint = anchor.web3.Keypair.generate(); // Wall mint
+        await addWall(program, signer, provider, umi, wallMint);
+        await addBrick(program, signer, provider, umi, wallMint.publicKey.toString());
+        await addBrick(program, signer, provider, umi, wallMint.publicKey.toString());
     });
+
+    // it("gets nfts", async () => {
+    //     async function fetchNftRegistry() {
+    //         const programId = program.programId;
+    //
+    //         const [nftRegistryPubkey, _bump] = await PublicKey.findProgramAddress(
+    //             [Buffer.from("nft_registry")],
+    //             programId
+    //         );
+    //
+    //         const nftRegistryAccount = await program.account.nftRegistry.fetch(nftRegistryPubkey);
+    //         console.log("NFTs Registered:", nftRegistryAccount.count.toString());
+    //         console.log("NFT Mint Addresses:");
+    //         let result = [];
+    //         nftRegistryAccount.nfts.forEach((mintAddress: PublicKey, index: number) => {
+    //             console.log(`${index + 1}: ${mintAddress.toBase58()}`);
+    //         });
+    //     }
+    //
+    //     fetchNftRegistry().catch(console.error);
+    // });
 
 
 });

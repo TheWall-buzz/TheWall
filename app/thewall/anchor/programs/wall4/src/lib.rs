@@ -14,7 +14,7 @@ use mpl_token_metadata::{
 use solana_program::pubkey::Pubkey;
 use std::str::FromStr;
 
-declare_id!("Ae3cdutffNw6Yj5DxWYXffJW5PegtCxJUjTLfUp1Mm3J");
+declare_id!("9czf4MLRzukFQuEiZSuccKWH97f2VcVGRJCgKo47Gnhq");
 
 
 #[program]
