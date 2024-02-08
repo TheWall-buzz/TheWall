@@ -7,7 +7,7 @@ import {
     findMasterEditionPda,
     findMetadataPda,
     mplTokenMetadata,
-    MPL_TOKEN_METADATA_PROGRAM_ID,
+    MPL_TOKEN_METADATA_PROGRAM_ID, collect,
 } from "@metaplex-foundation/mpl-token-metadata";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { publicKey } from "@metaplex-foundation/umi";
@@ -21,7 +21,7 @@ import {
     ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
-const PROGRAM_ID = new PublicKey("9czf4MLRzukFQuEiZSuccKWH97f2VcVGRJCgKo47Gnhq");
+const PROGRAM_ID = new PublicKey("A1xNh9dQmKmuyJHvdwVnSpMJWia1f4hF1Wb2DEMG9D5U");
 
 
 const METADATA_PROGRAM_ID = new PublicKey(
@@ -59,6 +59,11 @@ async function addWall(program, signer, provider, umi, mint) {
         programId
     );
 
+    // const [bricksRegistry, _bump2] = await PublicKey.findProgramAddress(
+    //     [Buffer.from("bricks_registry")],
+    //     programId
+    // );
+
     const tx = await program.methods
         .addWall(metadata.name, metadata.symbol, metadata.uri)
         .accounts({
@@ -68,6 +73,7 @@ async function addWall(program, signer, provider, umi, mint) {
             metadataAccount,
             masterEditionAccount,
             nftRegistry: nftRegistryAccount,
+            //bricksRegistry,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
@@ -75,9 +81,7 @@ async function addWall(program, signer, provider, umi, mint) {
             rent: anchor.web3.SYSVAR_RENT_PUBKEY
         })
         .signers([mint])
-        .rpc({
-            skipPreflight:true
-        });
+        .rpc();
 
     console.log(
         `Wall mint nft tx: https://explorer.solana.com/tx/${tx}?cluster=devnet`
@@ -88,7 +92,7 @@ async function addWall(program, signer, provider, umi, mint) {
     //return mint.publicKey.toString();
 }
 
-async function addBrick(program, signer, provider, umi, wallPubKey) {
+async function addBrick(program, signer, provider, umi, wallPubKey: anchor.web3.PublicKey) {
     const metadata = {
         name: "Brick of the Wall #1",
         symbol: "BRICK",
@@ -116,20 +120,26 @@ async function addBrick(program, signer, provider, umi, wallPubKey) {
     const programId = program.programId;
 
     // Generate the PDA used in the smart contract.
-    const [nftRegistryAccount, _bump] = await PublicKey.findProgramAddress(
-        [Buffer.from("nft_registry")],
+    // const [nftRegistryAccount, _bump] = await PublicKey.findProgramAddress(
+    //     [Buffer.from("nft_registry")],
+    //     programId
+    // );
+    const bricksRegistry = (await PublicKey.findProgramAddress(
+        [Buffer.from("bricks_registry"), wallPubKey.toBuffer()],
         programId
-    );
+    ))[0];
+
 
     const tx = await program.methods
-        .addBrick(metadata.name, metadata.symbol, metadata.uri, wallPubKey)
+        .addBrick(metadata.name, metadata.symbol, metadata.uri, wallPubKey.toString())
         .accounts({
             signer: provider.publicKey,
             mint: mint.publicKey,
             associatedTokenAccount,
             metadataAccount,
             masterEditionAccount,
-            nftRegistry: nftRegistryAccount,
+            wallMint: wallPubKey,
+            bricksRegistry,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
@@ -211,14 +221,14 @@ describe("solana-nft-anchor", async () => {
     async function initialize(program, signer, provider, umi) {
         const programId = program.programId;
         // Generate the PDA used in the smart contract.
-        const [nftRegistryAccount, _bump] = await PublicKey.findProgramAddress(
-            [Buffer.from("nft_registry")],
+        const [wallsRegistry, _bump] = await PublicKey.findProgramAddress(
+            [Buffer.from("walls_registry")],
             programId
         );
 
         await program.rpc.initialize({
             accounts: {
-                nftRegistry: nftRegistryAccount,
+                wallsRegistry,
                 user: program.provider.wallet.publicKey,
                 systemProgram: SystemProgram.programId,
             },
@@ -226,13 +236,127 @@ describe("solana-nft-anchor", async () => {
 
     }
 
+    async function testWallCall(program, signer, provider, umi, mint) {
+        const programId = program.programId;
+
+        // Generate the PDA used in the smart contract.
+        const [wallsRegistryAccount, _bump] = await PublicKey.findProgramAddress(
+            [Buffer.from("walls_registry")],
+            programId
+        );
+
+        const [bricksRegistry, _bump2] = await PublicKey.findProgramAddress(
+            [Buffer.from("bricks_registry"), mint.publicKey.toBuffer()],
+            programId
+        );
+
+        const tx = await program.methods
+            .testWall()
+            .accounts({
+                signer: provider.publicKey,
+                mint: mint.publicKey,
+                wallsRegistry: wallsRegistryAccount,
+                bricksRegistry,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                systemProgram: anchor.web3.SystemProgram.programId,
+                rent: anchor.web3.SYSVAR_RENT_PUBKEY
+            })
+            .signers([mint])
+            .rpc();
+
+        console.log(
+            `Wall mint nft tx: https://explorer.solana.com/tx/${tx}?cluster=devnet`
+        );
+        console.log(
+            `Wall minted nft: https://explorer.solana.com/address/${mint.publicKey}?cluster=devnet`
+        );
+    }
+
+    async function testBrickCall(program, signer, provider, umi, brickMint, wallMint) {
+        const programId = program.programId;
+
+        const [bricksRegistry, _bump2] = await PublicKey.findProgramAddress(
+            [Buffer.from("bricks_registry"), wallMint.publicKey.toBuffer()],
+            programId
+        );
+
+        const tx = await program.methods
+            .testBricks()
+            .accounts({
+                signer: provider.publicKey,
+                mint: brickMint.publicKey,
+                wallMint: wallMint.publicKey,
+                bricksRegistry,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                systemProgram: anchor.web3.SystemProgram.programId,
+                rent: anchor.web3.SYSVAR_RENT_PUBKEY
+            })
+            .signers([brickMint])
+            .rpc();
+
+        console.log(
+            `Brick mint nft tx: https://explorer.solana.com/tx/${tx}?cluster=devnet`
+        );
+        console.log(
+            `Brick minted nft: https://explorer.solana.com/address/${brickMint.publicKey}?cluster=devnet`
+        );
+    }
+
     it("mints nft!", async () => {
         await initialize(program, signer, provider, umi);
 
         const wallMint = anchor.web3.Keypair.generate(); // Wall mint
-        await addWall(program, signer, provider, umi, wallMint);
-        await addBrick(program, signer, provider, umi, wallMint.publicKey.toString());
-        await addBrick(program, signer, provider, umi, wallMint.publicKey.toString());
+        await testWallCall(program, signer, provider, umi, wallMint);
+
+        const brickMint = anchor.web3.Keypair.generate(); // Wall mint
+        await testBrickCall(program, signer, provider, umi, brickMint, wallMint);
+        const brickMint2 = anchor.web3.Keypair.generate(); // Wall mint
+        await testBrickCall(program, signer, provider, umi, brickMint2, wallMint);
+
+        // await testBrickCall(program, signer, provider, umi, wallMint);
+        //
+        // const wallMint2 = anchor.web3.Keypair.generate(); // Wall mint
+        // await testWallCall(program, signer, provider, umi, wallMint2);
+
+
+        // await addWall(program, signer, provider, umi, wallMint);
+
+        const programId = program.programId;
+
+        const [wallsRegistryAccount, _bump] = await PublicKey.findProgramAddress(
+            [Buffer.from("walls_registry")],
+            programId
+        );
+        const wallsRegistry = await program.account.wallsRegistry.fetch(wallsRegistryAccount);
+
+
+        for (const mintAddress of wallsRegistry.walls) {
+            console.log(`Wall: ${mintAddress.toBase58()}`);
+
+            const [brickRegistryAccount, _bump2] = await PublicKey.findProgramAddress(
+                [Buffer.from("bricks_registry"), mintAddress.toBuffer()],
+                programId
+            );
+            const brick_registry = await program.account.bricksRegistry.fetch(brickRegistryAccount);
+            for (const mintAddress2 of brick_registry.bricks) {
+                console.log(`Brick: ${mintAddress2.toBase58()}`);
+            }
+
+        }
+        console.log("------");
+
+        // const [bricksRegistry, _bump2] = await PublicKey.findProgramAddress(
+        //     [Buffer.from("bricks_registry"), mintAddress.toBuffer()],
+        //     programId
+        // );
+        // const bricksRegistry = await program.account.wallsRegistry.fetch(wallsRegistryAccount);
+
+
+        //
+        // console.log(program.account);
+
+        //
+
     });
 
     // it("gets nfts", async () => {
