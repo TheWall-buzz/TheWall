@@ -53,10 +53,11 @@ anchor test --skip-build --skip-deploy
 ```
 
 solana config set --url http://127.0.0.1:8899
-
 solana config set --url devnet
 
 solana-test-validator --clone metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s --url https://api.devnet.solana.com --reset
+solana-test-validator --clone metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s --url https://api.mainnet-beta.solana.com
+
 
 TODO
 - Frontend

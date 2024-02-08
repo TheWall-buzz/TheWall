@@ -201,7 +201,7 @@ async function getWallTx2(program, signer, provider, umi, mint) {
 
   const programId = program.programId;
 
-  const [wallsRegistryAccount, _bump] = await PublicKey.findProgramAddress(
+  const [wallsRegistry, _bump] = await PublicKey.findProgramAddress(
       [Buffer.from("walls_registry")],
       programId
   );
@@ -211,12 +211,14 @@ async function getWallTx2(program, signer, provider, umi, mint) {
       programId
   );
 
+  const metadata_url = "https://viviparty.s3.amazonaws.com/metadata.json";
+
   const tx = await program.methods
-      .testWall()
+      .addWall(metadata_url)
       .accounts({
         signer: provider.publicKey,
         mint: mint.publicKey,
-        wallsRegistry: wallsRegistryAccount,
+        wallsRegistry,
         bricksRegistry,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
@@ -231,17 +233,25 @@ async function getWallTx2(program, signer, provider, umi, mint) {
 async function getBrickTx2(program, signer, provider, umi, brickMint, wallMint) {
   const programId = program.programId;
 
+  const [wallsRegistry, _bump] = await PublicKey.findProgramAddress(
+        [Buffer.from("walls_registry")],
+        programId
+  );
+
   const [bricksRegistry, _bump2] = await PublicKey.findProgramAddress(
       [Buffer.from("bricks_registry"), wallMint.publicKey.toBuffer()],
       programId
   );
 
+  const metadata_url = "https://viviparty.s3.amazonaws.com/metadata.json";
+
   const tx = await program.methods
-      .testBricks()
+      .addBrick(metadata_url)
       .accounts({
         signer: provider.publicKey,
         mint: brickMint.publicKey,
         wallMint: wallMint.publicKey,
+        wallsRegistry,
         bricksRegistry,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,

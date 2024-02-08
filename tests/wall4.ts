@@ -158,7 +158,7 @@ async function addBrick(program, signer, provider, umi, wallPubKey: anchor.web3.
     return mint.publicKey;
 }
 
-describe("solana-nft-anchor", async () => {
+describe("TheWall", async () => {
     // Configured the client to use the devnet cluster.
     const provider = anchor.AnchorProvider.env();
     anchor.setProvider(provider);
@@ -166,57 +166,11 @@ describe("solana-nft-anchor", async () => {
 
     const signer = provider.wallet;
 
-    //const umi = createUmi("http://127.0.0.1:8899")
-    const umi = createUmi("https://api.devnet.solana.com")
+    const umi = createUmi("http://127.0.0.1:8899")
+    //const umi = createUmi("https://api.devnet.solana.com")
         .use(walletAdapterIdentity(signer))
         .use(mplTokenMetadata());
 
-
-//     it("prints", async() => {
-//
-//         // Function to find the Metadata PDA for a given mint address
-//         async function findMetadataPda2(mintAddress: PublicKey): Promise<PublicKey> {
-//             return PublicKey.findProgramAddress(
-//                 [Buffer.from('metadata'), METADATA_PROGRAM_ID.toBuffer(), mintAddress.toBuffer()],
-//                 METADATA_PROGRAM_ID
-//             ).then(([pda]) => pda);
-//         }
-//
-// // Function to fetch and parse the metadata for a given mint address
-//         async function fetchNftMetadata(mintAddress: string) {
-//             const mintPublicKey = new PublicKey(mintAddress);
-//             let metadataAccount = findMetadataPda(umi, {
-//                 mint: publicKey(mintPublicKey),
-//             })[0];
-//
-//             const metadata = await fetchMetadata(umi, metadataAccount);
-//
-//             // Output the metadata
-//             console.log("NFT Metadata3:", metadata);
-//         }
-//         async function fetchAllSPLTokens(walletAddress: string, rpcUrl: string = "https://api.devnet.solana.com") {
-//             const connection = new Connection(rpcUrl, "confirmed");
-//             const walletPublicKey = new PublicKey(walletAddress);
-//
-//             // Get all token accounts for the wallet by owner
-//             const tokenAccounts = await connection.getParsedTokenAccountsByOwner(walletPublicKey, { programId: TOKEN_PROGRAM_ID });
-//
-//             // Display token account details
-//             tokenAccounts.value.forEach(accountInfo => {
-//                 const accountData = accountInfo.account.data.parsed;
-//                 console.log(`Token Account Address: ${accountInfo.pubkey.toString()}`);
-//                 console.log(`Token Account Balance: ${accountData.info.tokenAmount.uiAmount}`);
-//                 console.log(`Mint Address: ${accountData.info.mint}`);
-//                 fetchNftMetadata(accountData.info.mint);
-//                 console.log('---------------------------------------------');
-//             });
-//
-//         }
-//
-// // Example usage
-//         const walletAddress = "4siwryZZU7EaTJWBcsbzaff6pdEE9c3RLrntHNBHnVYT";
-//         fetchAllSPLTokens(walletAddress);
-//     })
 
     async function initialize(program, signer, provider, umi) {
         const programId = program.programId;
@@ -233,13 +187,29 @@ describe("solana-nft-anchor", async () => {
                 systemProgram: SystemProgram.programId,
             },
         });
-
     }
 
-    async function testWallCall(program, signer, provider, umi, mint) {
+    async function addWallCall(program, signer, provider, umi, mint) {
         const programId = program.programId;
 
-        const [wallsRegistryAccount, _bump] = await PublicKey.findProgramAddress(
+        // Derive the associated token address account for the mint
+        const associatedTokenAccount = await getAssociatedTokenAddress(
+            mint.publicKey,
+            signer.publicKey
+        );
+
+        // derive the metadata account
+        let metadataAccount = findMetadataPda(umi, {
+            mint: publicKey(mint.publicKey),
+        })[0];
+
+        //derive the master edition pda
+        let masterEditionAccount = findMasterEditionPda(umi, {
+            mint: publicKey(mint.publicKey),
+        })[0];
+
+
+        const [wallsRegistry, _bump] = await PublicKey.findProgramAddress(
             [Buffer.from("walls_registry")],
             programId
         );
@@ -249,14 +219,21 @@ describe("solana-nft-anchor", async () => {
             programId
         );
 
+        const metadata_url = "https://viviparty.s3.amazonaws.com/metadata.json";
+
         const tx = await program.methods
-            .testWall()
+            .addWall(metadata_url)
             .accounts({
                 signer: provider.publicKey,
                 mint: mint.publicKey,
-                wallsRegistry: wallsRegistryAccount,
+                associatedTokenAccount,
+                metadataAccount,
+                masterEditionAccount,
+                wallsRegistry,
                 bricksRegistry,
                 tokenProgram: TOKEN_PROGRAM_ID,
+                associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+                tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
                 systemProgram: anchor.web3.SystemProgram.programId,
                 rent: anchor.web3.SYSVAR_RENT_PUBKEY
             })
@@ -271,22 +248,51 @@ describe("solana-nft-anchor", async () => {
         );
     }
 
-    async function testBrickCall(program, signer, provider, umi, brickMint, wallMint) {
+    async function addBrickCall(program, signer, provider, umi, brickMint, wallMint) {
         const programId = program.programId;
+
+        const [wallsRegistry, _bump] = await PublicKey.findProgramAddress(
+            [Buffer.from("walls_registry")],
+            programId
+        );
 
         const [bricksRegistry, _bump2] = await PublicKey.findProgramAddress(
             [Buffer.from("bricks_registry"), wallMint.publicKey.toBuffer()],
             programId
         );
 
+        // Derive the associated token address account for the mint
+        const associatedTokenAccount = await getAssociatedTokenAddress(
+            brickMint.publicKey,
+            signer.publicKey
+        );
+
+        // derive the metadata account
+        let metadataAccount = findMetadataPda(umi, {
+            mint: publicKey(brickMint.publicKey),
+        })[0];
+
+        //derive the master edition pda
+        let masterEditionAccount = findMasterEditionPda(umi, {
+            mint: publicKey(brickMint.publicKey),
+        })[0];
+
+        const metadata_url = "https://viviparty.s3.amazonaws.com/metadata.json";
+
         const tx = await program.methods
-            .testBricks()
+            .addBrick(metadata_url)
             .accounts({
                 signer: provider.publicKey,
                 mint: brickMint.publicKey,
                 wallMint: wallMint.publicKey,
+                associatedTokenAccount,
+                metadataAccount,
+                masterEditionAccount,
+                wallsRegistry,
                 bricksRegistry,
                 tokenProgram: TOKEN_PROGRAM_ID,
+                associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+                tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
                 systemProgram: anchor.web3.SystemProgram.programId,
                 rent: anchor.web3.SYSVAR_RENT_PUBKEY
             })
@@ -301,21 +307,21 @@ describe("solana-nft-anchor", async () => {
         );
     }
 
-    it("mints nft!", async () => {
+    it("mints walls and bricks!", async () => {
         //await initialize(program, signer, provider, umi);
 
         console.log("programId", program.programId.toString());
 
         const wallMint1 = anchor.web3.Keypair.generate(); // Wall mint
-        await testWallCall(program, signer, provider, umi, wallMint1);
+        await addWallCall(program, signer, provider, umi, wallMint1);
 
         const brickMint = anchor.web3.Keypair.generate(); // Wall mint
-        await testBrickCall(program, signer, provider, umi, brickMint, wallMint1);
+        await addBrickCall(program, signer, provider, umi, brickMint, wallMint1);
         const brickMint2 = anchor.web3.Keypair.generate(); // Wall mint
-        await testBrickCall(program, signer, provider, umi, brickMint2, wallMint1);
+        await addBrickCall(program, signer, provider, umi, brickMint2, wallMint1);
 
         const wallMint2 = anchor.web3.Keypair.generate(); // Wall mint
-        await testWallCall(program, signer, provider, umi, wallMint2);
+        await addWallCall(program, signer, provider, umi, wallMint2);
 
         const programId = program.programId;
 
@@ -343,27 +349,5 @@ describe("solana-nft-anchor", async () => {
         console.log("------");
 
     });
-
-    // it("gets nfts", async () => {
-    //     async function fetchNftRegistry() {
-    //         const programId = program.programId;
-    //
-    //         const [nftRegistryPubkey, _bump] = await PublicKey.findProgramAddress(
-    //             [Buffer.from("nft_registry")],
-    //             programId
-    //         );
-    //
-    //         const nftRegistryAccount = await program.account.nftRegistry.fetch(nftRegistryPubkey);
-    //         console.log("NFTs Registered:", nftRegistryAccount.count.toString());
-    //         console.log("NFT Mint Addresses:");
-    //         let result = [];
-    //         nftRegistryAccount.nfts.forEach((mintAddress: PublicKey, index: number) => {
-    //             console.log(`${index + 1}: ${mintAddress.toBase58()}`);
-    //         });
-    //     }
-    //
-    //     fetchNftRegistry().catch(console.error);
-    // });
-
 
 });
