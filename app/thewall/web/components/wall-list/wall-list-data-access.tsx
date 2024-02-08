@@ -49,8 +49,8 @@ export function useWallProgram() {
     });
 
     const initialize = useMutation({
-        mutationKey: ['wall', 'sendBatch', {cluster}],
-        mutationFn: (bricksCount: Number) => sendBatch(program, provider.wallet, provider, umi, bricksCount),
+        mutationKey: ['wall', 'sendTxBatch', {cluster}],
+        mutationFn: (bricksCount: Number) => sendTxBatch(program, provider.wallet, provider, umi, bricksCount),
         onSuccess: (signature) => {
             transactionToast(signature);
             return accounts.refetch();
@@ -89,112 +89,6 @@ export function useWallProgramAccount({wallPublicKey}: { wallPublicKey: PublicKe
 }
 
 async function getWallTx(program, signer, provider, umi, mint) {
-    const metadata = {
-        name: "Wall #1",
-        symbol: "WALL",
-        uri: "https://viviparty.s3.amazonaws.com/metadata.json",
-    };
-
-    // Derive the associated token address account for the mint
-    const associatedTokenAccount = await getAssociatedTokenAddress(
-        mint.publicKey,
-        signer.publicKey
-    );
-
-    // derive the metadata account
-    let metadataAccount = findMetadataPda(umi, {
-        mint: publicKey(mint.publicKey),
-    })[0];
-
-    //derive the master edition pda
-    let masterEditionAccount = findMasterEditionPda(umi, {
-        mint: publicKey(mint.publicKey),
-    })[0];
-
-    const programId = program.programId;
-
-    // Generate the PDA used in the smart contract.
-    const [wallsRegistry, _bump] = await PublicKey.findProgramAddress(
-        [Buffer.from("walls_registry")],
-        programId
-    );
-
-    const tx = await program.methods
-        .addWall(metadata.name, metadata.symbol, metadata.uri)
-        .accounts({
-            signer: provider.publicKey,
-            mint: mint.publicKey,
-            associatedTokenAccount,
-            metadataAccount,
-            masterEditionAccount,
-            wallsRegistry: wallsRegistry,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-            tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
-            systemProgram: anchor.web3.SystemProgram.programId,
-            rent: anchor.web3.SYSVAR_RENT_PUBKEY
-        })
-        .signers([mint])
-        .transaction()
-
-    return [tx, mint];
-}
-
-async function getBrickTx(program, signer, provider, umi, wallPubKey) {
-    const metadata = {
-        name: "Brick of the Wall #1",
-        symbol: "BRICK",
-        uri: "https://viviparty.s3.amazonaws.com/wall1brick1/metadata.json",
-    };
-
-    const mint = anchor.web3.Keypair.generate();
-
-    // Derive the associated token address account for the mint
-    const associatedTokenAccount = await getAssociatedTokenAddress(
-        mint.publicKey,
-        signer.publicKey
-    );
-
-    // derive the metadata account
-    let metadataAccount = findMetadataPda(umi, {
-        mint: publicKey(mint.publicKey),
-    })[0];
-
-    //derive the master edition pda
-    let masterEditionAccount = findMasterEditionPda(umi, {
-        mint: publicKey(mint.publicKey),
-    })[0];
-
-    const programId = program.programId;
-
-    // Generate the PDA used in the smart contract.
-    const [nftRegistryAccount, _bump] = await PublicKey.findProgramAddress(
-        [Buffer.from("nft_registry")],
-        programId
-    );
-
-    const tx = await program.methods
-        //.addBrick(metadata.name, metadata.symbol, metadata.uri, wallPubKey)
-        .addWall(metadata.name, metadata.symbol, metadata.uri)
-        .accounts({
-            signer: provider.publicKey,
-            mint: mint.publicKey,
-            associatedTokenAccount,
-            metadataAccount,
-            masterEditionAccount,
-            nftRegistry: nftRegistryAccount,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-            tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
-            systemProgram: anchor.web3.SystemProgram.programId,
-            rent: anchor.web3.SYSVAR_RENT_PUBKEY
-        })
-        .signers([mint])
-        .transaction();
-    return [tx, mint];
-}
-
-async function getWallTx2(program, signer, provider, umi, mint) {
 
     const programId = program.programId;
 
@@ -231,7 +125,7 @@ async function getWallTx2(program, signer, provider, umi, mint) {
         .accounts({
             signer: provider.publicKey,
             mint: mint.publicKey,
-            associatedTokenAccount,
+            //associatedTokenAccount,
             metadataAccount,
             masterEditionAccount,
             wallsRegistry,
@@ -248,7 +142,7 @@ async function getWallTx2(program, signer, provider, umi, mint) {
     return [tx, mint];
 }
 
-async function getBrickTx2(program, signer, provider, umi, brickMint, wallMint) {
+async function getBrickTx(program, signer, provider, umi, brickMint, wallMint) {
     const programId = program.programId;
 
     const [wallsRegistry, _bump] = await PublicKey.findProgramAddress(
@@ -285,7 +179,7 @@ async function getBrickTx2(program, signer, provider, umi, brickMint, wallMint) 
             signer: provider.publicKey,
             mint: brickMint.publicKey,
             wallMint: wallMint.publicKey,
-            associatedTokenAccount,
+            //associatedTokenAccount,
             metadataAccount,
             masterEditionAccount,
             wallsRegistry,
@@ -302,14 +196,14 @@ async function getBrickTx2(program, signer, provider, umi, brickMint, wallMint) 
 }
 
 
-async function sendBatch(program, signer, provider, umi, bricksAmount) {
+async function sendTxBatch(program, signer, provider, umi, bricksAmount) {
     const wallMint = anchor.web3.Keypair.generate();
     const txList = []
-    const [tx, mint] = await getWallTx2(program, signer, provider, umi, wallMint);
+    const [tx, mint] = await getWallTx(program, signer, provider, umi, wallMint);
     txList.push({tx: tx, signers: [mint]})
     for (let i = 0; i < bricksAmount; i++) {
         const brickMint = anchor.web3.Keypair.generate();
-        const [tx, mint] = await getBrickTx2(program, signer, provider, umi, brickMint, wallMint);
+        const [tx, mint] = await getBrickTx(program, signer, provider, umi, brickMint, wallMint);
         txList.push({tx: tx, signers: [mint]})
     }
 
@@ -321,12 +215,4 @@ async function sendBatch(program, signer, provider, umi, bricksAmount) {
     }
 }
 
-async function fetchNftRegistry(program, nftRegistryPubkey: PublicKey) {
-    const nftRegistryAccount = await program.account.nftRegistry.fetch(nftRegistryPubkey);
-    console.log("NFTs Registered:", nftRegistryAccount.count.toString());
-    console.log("NFT Mint Addresses:");
-    nftRegistryAccount.nfts.forEach((mintAddress: PublicKey, index: number) => {
-        console.log(`${index + 1}: ${mintAddress.toBase58()}`);
-    });
-}
 

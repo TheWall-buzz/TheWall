@@ -18,7 +18,7 @@ export function WallCreate() {
       className="btn btn-xs lg:btn-md btn-primary"
         onClick={() => {
             const value = window.prompt(
-                'Set value to:',
+                'Set amount of bricks:',
                 defaultBricksCount.toString()
             );
             if (
@@ -77,7 +77,7 @@ export function WallList() {
 }
 
 function WallCard({ wallPublicKey }: { wallPublicKey: PublicKey }) {
-  const { account, increment, set, decrement, close } =
+  const { account, close } =
     useWallProgramAccount({
       wallPublicKey,
     });
