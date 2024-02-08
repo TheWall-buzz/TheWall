@@ -93,7 +93,10 @@ function WallCard({ wallPublicKey }: { wallPublicKey: PublicKey }) {
 
             <div className="grid md:grid-cols-2 gap-4">
               {account.data && account.data.bricks.map((brickPublicKey) => (
-                  <BrickCard brickPublicKey={brickPublicKey} />
+                  <BrickCard
+                      key={brickPublicKey.toString()}
+                      brickPublicKey={brickPublicKey}
+                  />
               ))}
             </div>
 

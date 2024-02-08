@@ -21,7 +21,7 @@ import {
     ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
-//const PROGRAM_ID = new PublicKey("A1xNh9dQmKmuyJHvdwVnSpMJWia1f4hF1Wb2DEMG9D5U");
+const PROGRAM_ID = new PublicKey("2SjCg4NavpCbDikCZ6m7SJNtufMk8khAq8yMzJe2nA61");
 
 
 const METADATA_PROGRAM_ID = new PublicKey(
@@ -239,7 +239,6 @@ describe("solana-nft-anchor", async () => {
     async function testWallCall(program, signer, provider, umi, mint) {
         const programId = program.programId;
 
-        // Generate the PDA used in the smart contract.
         const [wallsRegistryAccount, _bump] = await PublicKey.findProgramAddress(
             [Buffer.from("walls_registry")],
             programId
@@ -305,16 +304,18 @@ describe("solana-nft-anchor", async () => {
     it("mints nft!", async () => {
         //await initialize(program, signer, provider, umi);
 
-        // const wallMint1 = anchor.web3.Keypair.generate(); // Wall mint
-        // await testWallCall(program, signer, provider, umi, wallMint1);
-        //
-        // const brickMint = anchor.web3.Keypair.generate(); // Wall mint
-        // await testBrickCall(program, signer, provider, umi, brickMint, wallMint1);
-        // const brickMint2 = anchor.web3.Keypair.generate(); // Wall mint
-        // await testBrickCall(program, signer, provider, umi, brickMint2, wallMint1);
-        //
-        // const wallMint2 = anchor.web3.Keypair.generate(); // Wall mint
-        // await testWallCall(program, signer, provider, umi, wallMint2);
+        console.log("programId", program.programId.toString());
+
+        const wallMint1 = anchor.web3.Keypair.generate(); // Wall mint
+        await testWallCall(program, signer, provider, umi, wallMint1);
+
+        const brickMint = anchor.web3.Keypair.generate(); // Wall mint
+        await testBrickCall(program, signer, provider, umi, brickMint, wallMint1);
+        const brickMint2 = anchor.web3.Keypair.generate(); // Wall mint
+        await testBrickCall(program, signer, provider, umi, brickMint2, wallMint1);
+
+        const wallMint2 = anchor.web3.Keypair.generate(); // Wall mint
+        await testWallCall(program, signer, provider, umi, wallMint2);
 
         const programId = program.programId;
 
