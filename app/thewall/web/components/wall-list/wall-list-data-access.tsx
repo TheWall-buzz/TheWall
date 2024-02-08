@@ -49,14 +49,13 @@ export function useWallProgram() {
   });
 
   const initialize = useMutation({
-    mutationKey: ['wall', 'initialize', { cluster }],
-    //mutationFn: (keypair: Keypair) => addWall(program, provider.wallet, provider, umi),
+    mutationKey: ['wall', 'sendBatch', { cluster }],
     mutationFn: (bricksCount: Number) => sendBatch(program, provider.wallet, provider, umi, bricksCount),
     onSuccess: (signature) => {
       transactionToast(signature);
       return accounts.refetch();
     },
-    onError: () => toast.error('Failed to initialize counter'),
+    onError: () => toast.error('Failed to send transaction batch'),
   });
 
   return {
@@ -81,9 +80,7 @@ export function useWallProgramAccount({ wallPublicKey }: { wallPublicKey: Public
   const account = useQuery({
     queryKey: ['counter', 'fetch', { cluster, bricksRegistryAccount }],
     queryFn: () => program.account.bricksRegistry.fetch(bricksRegistryAccount),
-    //queryFn: () => program.account.bricksRegistry.all(),
   });
-
 
   return {
     account,
@@ -264,18 +261,15 @@ async function getBrickTx2(program, signer, provider, umi, brickMint, wallMint) 
 
 
 async function sendBatch(program, signer, provider, umi, bricksAmount) {
-  console.log("HERE");
   const wallMint = anchor.web3.Keypair.generate();
   const txList = []
   const [tx, mint] = await getWallTx2(program, signer, provider, umi, wallMint);
   txList.push({ tx: tx, signers: [mint] })
-  console.log("adds22");
   for (let i = 0; i < bricksAmount; i++) {
     const brickMint = anchor.web3.Keypair.generate();
     const [tx, mint] = await getBrickTx2(program, signer, provider, umi, brickMint, wallMint);
     txList.push({ tx: tx, signers: [mint] })
   }
-  console.log(111);
 
   try {
     const txSigs = await provider.sendAll(txList);
@@ -294,25 +288,3 @@ async function fetchNftRegistry(program, nftRegistryPubkey: PublicKey) {
   });
 }
 
-export function useBrickProgramAccount({ brickPublicKey }: { brickPublicKey: PublicKey }) {
-  const { cluster } = useCluster();
-  const transactionToast = useTransactionToast();
-  const { program, accounts, programId } = useWallProgram();
-
-  // const [bricksRegistryAccount, _bump] = PublicKey.findProgramAddressSync(
-  //     [Buffer.from("bricks_registry"), brickPublicKey.toBuffer()],
-  //     programId
-  // );
-
-  const account = useQuery({
-    queryKey: ['counter', 'fetch', { cluster, bricksRegistryAccount }],
-    queryFn: () => program.account.bricksRegistry.fetch(bricksRegistryAccount),
-    //queryFn: () => program.account.bricksRegistry.all(),
-  });
-
-
-
-  return {
-    account
-  };
-}
