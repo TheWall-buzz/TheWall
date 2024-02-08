@@ -4,6 +4,7 @@ import type { Counter } from '../target/types/counter';
 import type { Wall4 } from '../target/types/wall4';
 import { IDL as CounterIDL } from '../target/types/counter';
 import { IDL as WallIDL } from '../target/types/wall4';
+import { Program } from '@coral-xyz/anchor';
 
 // Re-export the generated IDL and type
 export { Counter, CounterIDL };
@@ -18,7 +19,7 @@ export const COUNTER_PROGRAM_ID = new PublicKey(
 );
 
 export const WALL_PROGRAM_ID = new PublicKey(
-    'BCM4NRYr5q65AqSsvCUqE9KRjqLpj1SLFzutrzEy2Kui'
+    'Ae3cdutffNw6Yj5DxWYXffJW5PegtCxJUjTLfUp1Mm3J'
 );
 
 // This is a helper function to get the program ID for the Counter program depending on the cluster.

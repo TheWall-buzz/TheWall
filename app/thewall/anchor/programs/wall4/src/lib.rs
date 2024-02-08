@@ -10,19 +10,24 @@ use anchor_spl::{
 use mpl_token_metadata::{
     pda::{find_master_edition_account, find_metadata_account},
     state::{DataV2, Collection},
-    instruction::verify_collection
 };
 use solana_program::pubkey::Pubkey;
 use std::str::FromStr;
 
-declare_id!("BCM4NRYr5q65AqSsvCUqE9KRjqLpj1SLFzutrzEy2Kui");
+declare_id!("Ae3cdutffNw6Yj5DxWYXffJW5PegtCxJUjTLfUp1Mm3J");
 
 
 #[program]
 pub mod wall4 {
     use super::*;
 
+    // pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+    //     Ok(())
+    // }
+
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        let nft_registry = &mut ctx.accounts.nft_registry;
+        nft_registry.count = 0; // Initialize counter to 0.
         Ok(())
     }
 
@@ -76,8 +81,6 @@ pub mod wall4 {
             data_v2
         );
     }
-
-    //pub fn verify_collection()
 }
 
 pub fn init_nft(
@@ -130,11 +133,38 @@ pub fn init_nft(
 
     create_master_edition_v3(cpi_context, None)?;
 
+    let nft_registry = &mut ctx.accounts.nft_registry;
+
+    // Ensure the NFT is not already registered.
+    if !nft_registry.nfts.contains(&ctx.accounts.mint.key()) {
+        // Add the NFT to the registry.
+        nft_registry.nfts.push(ctx.accounts.mint.key());
+        nft_registry.count += 1;
+    }
+
     Ok(())
 }
 
-#[derive(Accounts)]
-pub struct Initialize {}
+// #[derive(Accounts)]
+// pub struct Initialize<'info> {
+//     /// CHECK: ok, we are passing in this account ourselves
+//     #[account(mut, signer)]
+//     pub signer: AccountInfo<'info>,
+//
+//     #[account(
+//     init,
+//     seeds = [b"nft_registry"],
+//     bump,
+//     payer = signer,
+//     space = 8 + 32 * 100 + 8
+//     )]
+//     pub registry: Account<'info, NftRegistry>,
+//
+//     // #[account(mut)]
+//     // pub user: Signer<'info>,
+//
+//     pub system_program: Program<'info, System>,
+// }
 
 #[derive(Accounts)]
 pub struct InitNFT<'info> {
@@ -169,14 +199,8 @@ pub struct InitNFT<'info> {
     )]
     pub master_edition_account: AccountInfo<'info>,
 
-    #[account(
-    init_if_needed,
-    seeds = [b"nft_registry"],
-    bump,
-    payer = signer,
-    space = 8 + 32 * 100 + 8
-    )]
-    pub registry: Account<'info, NftRegistry>,
+    #[account(mut, seeds = [b"nft_registry"], bump)]
+    pub nft_registry: Account<'info, NftRegistry>,
 
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -185,10 +209,27 @@ pub struct InitNFT<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
+// #[account]
+// pub struct NftRegistry {
+//     // The list of NFT mint addresses.
+//     pub nfts: Vec<Pubkey>,
+//     // Number of NFTs registered.
+//     pub count: u64,
+// }
+
 #[account]
 pub struct NftRegistry {
     // The list of NFT mint addresses.
     pub nfts: Vec<Pubkey>,
     // Number of NFTs registered.
     pub count: u64,
+}
+
+#[derive(Accounts)]
+pub struct Initialize<'info> {
+    #[account(init, payer = user, space = 8 + 32 * 100 + 8, seeds = [b"nft_registry"], bump)]
+    pub nft_registry: Account<'info, NftRegistry>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+    pub system_program: Program<'info, System>,
 }

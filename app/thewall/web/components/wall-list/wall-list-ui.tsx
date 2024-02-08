@@ -39,6 +39,7 @@ export function WallList() {
       </div>
     );
   }
+  console.log(accounts.data);
   return (
     <div className={'space-y-6'}>
       {accounts.isLoading ? (

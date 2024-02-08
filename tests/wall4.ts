@@ -21,7 +21,7 @@ import {
     ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
-const PROGRAM_ID = new PublicKey("NvyZHCoYSvWdYCvwjjHBTUb9Y3Bgf6ZkQEeQiZwsjiL");
+const PROGRAM_ID = new PublicKey("Ae3cdutffNw6Yj5DxWYXffJW5PegtCxJUjTLfUp1Mm3J");
 
 
 const METADATA_PROGRAM_ID = new PublicKey(
@@ -53,10 +53,13 @@ async function addWall(program, signer, provider, umi) {
         mint: publicKey(mint.publicKey),
     })[0];
 
-    const registry = (await PublicKey.findProgramAddress(
+    const programId = program.programId;
+
+    // Generate the PDA used in the smart contract.
+    const [nftRegistryAccount, _bump] = await PublicKey.findProgramAddress(
         [Buffer.from("nft_registry")],
-        PROGRAM_ID
-    ))[0];
+        programId
+    );
 
     const tx = await program.methods
         .addWall(metadata.name, metadata.symbol, metadata.uri)
@@ -66,7 +69,7 @@ async function addWall(program, signer, provider, umi) {
             associatedTokenAccount,
             metadataAccount,
             masterEditionAccount,
-            registry,
+            nftRegistry: nftRegistryAccount,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
@@ -112,10 +115,13 @@ async function addBrick(program, signer, provider, umi, wallPubKey) {
         mint: publicKey(mint.publicKey),
     })[0];
 
-    const registry = (await PublicKey.findProgramAddress(
+    const programId = program.programId;
+
+    // Generate the PDA used in the smart contract.
+    const [nftRegistryAccount, _bump] = await PublicKey.findProgramAddress(
         [Buffer.from("nft_registry")],
-        PROGRAM_ID
-    ))[0];
+        programId
+    );
 
     const tx = await program.methods
         .addBrick(metadata.name, metadata.symbol, metadata.uri, wallPubKey)
@@ -125,7 +131,7 @@ async function addBrick(program, signer, provider, umi, wallPubKey) {
             associatedTokenAccount,
             metadataAccount,
             masterEditionAccount,
-            registry,
+            nftRegistry: nftRegistryAccount,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
@@ -205,41 +211,16 @@ describe("solana-nft-anchor", async () => {
 //     })
 
     async function initialize(program, signer, provider, umi) {
-
-        // const registry = (await PublicKey.findProgramAddress(
-        //     [Buffer.from("nft_registry")],
-        //     PROGRAM_ID
-        // ))[0];
-        //
-        // const tx = await program.methods
-        //     .initialize()
-        //     .accounts({
-        //         registry,
-        //         signer: provider.publicKey,
-        //         programAccount: PROGRAM_ID,
-        //         systemProgram: anchor.web3.SystemProgram.programId,
-        //         //rent: anchor.web3.SYSVAR_RENT_PUBKEY
-        //     })
-        //     //.signers([signer])
-        //     .rpc({
-        //         skipPreflight:true
-        //     });
-        //
-        // console.log(
-        //     `Initialize: https://explorer.solana.com/tx/${tx}?cluster=devnet`
-        // );
-
         const programId = program.programId;
-
         // Generate the PDA used in the smart contract.
-        const [greetingAccountPda, _bump] = await PublicKey.findProgramAddress(
-            [Buffer.from("greeting")],
+        const [nftRegistryAccount, _bump] = await PublicKey.findProgramAddress(
+            [Buffer.from("nft_registry")],
             programId
         );
 
         await program.rpc.initialize({
             accounts: {
-                greetingAccount: greetingAccountPda,
+                nftRegistry: nftRegistryAccount,
                 user: program.provider.wallet.publicKey,
                 systemProgram: SystemProgram.programId,
             },
@@ -247,14 +228,34 @@ describe("solana-nft-anchor", async () => {
 
     }
 
-    it("mints nft!", async () => {
-        await initialize(program, signer, provider, umi);
+    // it("mints nft!", async () => {
+    //     // await initialize(program, signer, provider, umi);
+    //
+    //     const wallPubKey = await addWall(program, signer, provider, umi);
+    //     await addBrick(program, signer, provider, umi, wallPubKey);
+    //     await addBrick(program, signer, provider, umi, wallPubKey);
+    // });
 
-        // const wallPubKey = await addWall(program, signer, provider, umi);
-        // await addBrick(program, signer, provider, umi, wallPubKey);
-        // await addBrick(program, signer, provider, umi, wallPubKey);
+    it("gets nfts", async () => {
+        async function fetchNftRegistry() {
+            const programId = program.programId;
+
+            const [nftRegistryPubkey, _bump] = await PublicKey.findProgramAddress(
+                [Buffer.from("nft_registry")],
+                programId
+            );
+
+            const nftRegistryAccount = await program.account.nftRegistry.fetch(nftRegistryPubkey);
+            console.log("NFTs Registered:", nftRegistryAccount.count.toString());
+            console.log("NFT Mint Addresses:");
+            let result = [];
+            nftRegistryAccount.nfts.forEach((mintAddress: PublicKey, index: number) => {
+                console.log(`${index + 1}: ${mintAddress.toBase58()}`);
+            });
+        }
+
+        fetchNftRegistry().catch(console.error);
     });
-
 
 
 });

@@ -30,6 +30,7 @@ export function useWallProgram() {
     () => getWallProgramId(cluster.network as Cluster),
     [cluster]
   );
+
   const program = new Program(WallIDL, programId, provider);
 
   const umi = createUmi("https://api.devnet.solana.com")
@@ -38,7 +39,7 @@ export function useWallProgram() {
 
   const accounts = useQuery({
     queryKey: ['counter', 'all', { cluster }],
-    queryFn: () => program.account.mint.all(),
+    queryFn: () => program.account.nftRegistry.all(),
   });
 
   const getProgramAccount = useQuery({
@@ -173,3 +174,11 @@ async function addWall(program, signer, provider, umi) {
   return mint.publicKey.toString();
 }
 
+async function fetchNftRegistry(program, nftRegistryPubkey: PublicKey) {
+  const nftRegistryAccount = await program.account.nftRegistry.fetch(nftRegistryPubkey);
+  console.log("NFTs Registered:", nftRegistryAccount.count.toString());
+  console.log("NFT Mint Addresses:");
+  nftRegistryAccount.nfts.forEach((mintAddress: PublicKey, index: number) => {
+    console.log(`${index + 1}: ${mintAddress.toBase58()}`);
+  });
+}

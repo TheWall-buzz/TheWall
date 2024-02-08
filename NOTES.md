@@ -74,6 +74,10 @@ mpl_token_metadata/digitalAsset.d.ts
   */
   export declare function fetchAllDigitalAssetByVerifiedCollection(context: Pick<Context, 'rpc' | 'eddsa' | 'programs'>, collectionAddress: PublicKey, options?: RpcGetAccountsOptions): Promise<DigitalAsset[]>;
 
+}).rpc({
+skipPreflight:true
+})
+
 ### Wall Use Cases
 1. User creates a Wall NxM bricks and pays N*M*fee SOL.
    Actions:
